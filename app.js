@@ -7,7 +7,6 @@ const port = process.env.PORT || 3000;
 const chromium = require('chrome-aws-lambda');
 const puppeteer = chromium.puppeteer;
 
-
 async function fetchHtml2(url) {
   try {
     const response = await axios.get(url);
@@ -17,7 +16,6 @@ async function fetchHtml2(url) {
     throw error;
   }
 }
-
 
 async function fetchHtml(url) {
   try {
@@ -62,58 +60,50 @@ async function fetchHtml(url) {
   }
 }
 
-
-app.get('/api/games', async (req, res) => {
+async function fetchGamesData() {
   try {
     const $ = await fetchHtml('http://www.jrskan.com/');
-
-    const matchList = $('div.loc_match_list');
-    const matches = matchList.find('ul.item.play');
     const games = [];
 
-
-    matches.each((index, element) => {
+    $('div.loc_match_list ul.item.play').each((index, element) => {
       const match = $(element);
-
-      const league = match.find('li.lab_events span.name').text().trim();
-      const gameTime = match.find('li.lab_time').text().trim();
-
-      const team1 = match.find('li.lab_team_home strong.name').text().trim();
-      const team1Score = match.find('li.lab_team_home em.bf').text().trim();
-      const team1Logo = match.find('li.lab_team_home span.avatar img').attr('src');
-
-      const team2 = match.find('li.lab_team_away strong.name').text().trim();
-      const team2Score = match.find('li.lab_team_away em.bf').text().trim();
-      const team2Logo = match.find('li.lab_team_away span.avatar img').attr('src');
-
-      const liveLinksElements = match.find('li.lab_channel a.item');
-      const liveLinks = [];
-
-      liveLinksElements.each((i, el) => {
+      const liveLinks = match.find('li.lab_channel a.item').map((i, el) => {
         const liveLinkElement = $(el);
-        const liveLinkURL = liveLinkElement.attr('href');
-        const liveLinkName = liveLinkElement.text();
-        liveLinks.push({ name: liveLinkName, url: liveLinkURL });
-      });
+        return {
+          name: liveLinkElement.text(),
+          url: liveLinkElement.attr('href')
+        };
+      }).get();
 
-      const game = {
-        league,
-        gameTime,
-        team1,
-        team1Score,
-        team1Logo,
-        team2,
-        team2Score,
-        team2Logo,
+      games.push({
+        league: match.find('li.lab_events span.name').text().trim(),
+        gameTime: match.find('li.lab_time').text().trim(),
+        team1: match.find('li.lab_team_home strong.name').text().trim(),
+        team1Score: match.find('li.lab_team_home em.bf').text().trim(),
+        team1Logo: match.find('li.lab_team_home span.avatar img').attr('src'),
+        team2: match.find('li.lab_team_away strong.name').text().trim(),
+        team2Score: match.find('li.lab_team_away em.bf').text().trim(),
+        team2Logo: match.find('li.lab_team_away span.avatar img').attr('src'),
         liveLinks
-      };
-
-      games.push(game);
+      });
     });
 
-    res.json(games);
+    cachedData.games = games;
+    cachedData.timestamp = new Date().getTime();
   } catch (error) {
     console.error(error);
+  }
+}
+
+let cachedData = {
+  games: null,
+  timestamp: null
+};
+
+app.get('/api/games', (req, res) => {
+  if (cachedData.games) {
+    res.json(cachedData.games);
+  } else {
     res.status(500).json({ error: 'An error occurred while fetching data.' });
   }
 });
@@ -130,22 +120,17 @@ app.get('/api/parseLiveLinks', async (req, res) => {
   const host = url.split('/').slice(0, 3).join('/');
 
   try {
-    // const $ = await fetchHtml(url);
-    const $ = await fetchHtml2(url); // 使用 fetchHtml2 函数
-
-
-    const subChannels = $('.sub_channel a.item');
-    const liveLinks = [];
-
-    subChannels.each((i, el) => {
+    const $ = await fetchHtml2(url);
+    const liveLinks = $('.sub_channel a.item').map((i, el) => {
       const subChannel = $(el);
-      const name = subChannel.text();
-      const urlPath = subChannel.attr('data-play');
-      const url = `${host}${urlPath}`;
-      liveLinks.push({ name, url });
-    });
+      return {
+        name: subChannel.text(),
+        url: `${host}${subChannel.attr('data-play')}`
+      };
+    }).get();
 
     res.json(liveLinks);
+
   } catch (error) {
     console.error('Error fetching live links:', error.message);
     res.status(500).json({ error: 'Failed to fetch live links' });
@@ -156,7 +141,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+fetchGamesData();
+setInterval(fetchGamesData,
+  1000 * 60 * 3
+);
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
 });
-

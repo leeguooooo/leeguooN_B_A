@@ -54,6 +54,8 @@ li {
 	font-size: 18px;
 	font-weight: bold;
 	margin-bottom: 10px;
+	flex-wrap: wrap;
+
 }
 
 .teams {
@@ -237,4 +239,15 @@ button {
 
 .team-score {
 	margin: 0 5px;
+}
+
+@media screen and (max-width: 480px) {
+	.game-info {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.game-info > div {
+		margin-bottom: 5px;
+	}
 }
