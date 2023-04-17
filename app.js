@@ -174,7 +174,7 @@ app.get('/', (req, res) => {
 
 fetchGamesData();
 setInterval(fetchGamesData,
-  1000 * 60 * 3
+  1000 * 60 * 1
 );
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
