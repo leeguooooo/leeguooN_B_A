@@ -109,7 +109,7 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.get('/fetchGamesData', async (req, res) => {
+app.post('/fetchGamesData', async (req, res) => {
   console.log('Received games data from Vercel API');
   const apiKey = req.header('X-Api-Key');
 
