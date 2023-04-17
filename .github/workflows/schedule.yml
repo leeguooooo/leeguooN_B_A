@@ -1,7 +1,7 @@
 name: Schedule Fetch Games Data
 on:
   schedule:
-    - cron: '0 */1 * * *'
+    - cron: '* * * * *'
 
 jobs:
   fetch_games_data:

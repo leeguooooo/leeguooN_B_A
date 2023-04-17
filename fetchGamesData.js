@@ -1,3 +1,6 @@
+/**
+ * file: fetchGamesData.js
+ */
 const axios = require('axios');
 const fetchGamesData = require('./fetchGamesDataFunction');
 require('dotenv').config();
