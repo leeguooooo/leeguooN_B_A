@@ -29,9 +29,11 @@ app.get('/api/games', async (req, res) => {
     res.json(cachedData.games);
   } else {
     try {
-      // await fetchGamesData();
-      if (cachedData.games) {
-        res.json(cachedData.games);
+      const games = await fetchGamesData();
+      if (games) {
+        cachedData.games = games;
+        cachedData.timestamp = new Date().getTime();
+        res.json(games);
       } else {
         res
           .status(500)

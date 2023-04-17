@@ -4,7 +4,7 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>NBA 赛事信息</title>
+	<title>赛事信息</title>
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
 	<script src="https://unpkg.com/vue@3"></script>
 	<link rel="stylesheet" href="index.css">
@@ -15,7 +15,7 @@
 		<div class="loading" v-if="isLoading">加载中...</div>
 		<!-- 新增多选框 -->
 		<div class="fixed-container">
-			<h3>选择联盟</h3>
+			<h3>选择赛事</h3>
 			<div class="checkbox-container">
 				<label class="checkbox-label" v-for="league in leagues" :key="league.id">
 					<input type="checkbox" :value="league.id" v-model="selectedLeagues">
@@ -38,11 +38,12 @@
 							game.team2 }} <img :src="game.team2Logo" width="30" height="30"></div>
 						<div>{{ game.gameTime }}</div>
 					</div>
-					<ul class="live-links">
-						<li v-for="liveLink in game.liveLinks" :key="liveLink.url">
+					<div class="live-links">
+						<div class="live-link-btn" v-for="liveLink in game.liveLinks" :key="liveLink.url">
 							<button @click="openLiveLink(liveLink.url)">{{ liveLink.name }}</button>
-						</li>
-					</ul>
+							<div class="live-link-tooltip"></div>
+						</div>
+					</div>
 				</li>
 			</ul>
 		</div>
