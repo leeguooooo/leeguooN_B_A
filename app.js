@@ -109,6 +109,20 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+app.get('/fetchGamesData', async (req, res) => {
+  console.log('Received games data from Vercel API');
+  const apiKey = req.header('X-Api-Key');
+
+  if (!apiKey || apiKey !== process.env.API_KEY) {
+    console.log('apiKey', apiKey);
+    res.status(403).json({ error: 'Invalid API key' });
+    return;
+  }
+
+  const games = await fetchGamesData();
+  res.json(games);
+});
+
 app.listen(port, () => {
   console.log(`Server listening on port http://localhost:${port}`);
 });
