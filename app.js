@@ -119,8 +119,13 @@ app.post('/fetchGamesData', async (req, res) => {
     return;
   }
 
-  const games = await fetchGamesData();
-  res.json(games);
+  const gamesData = await fetchGamesData();
+
+  cachedData.games = gamesData;
+  cachedData.timestamp = new Date().getTime();
+
+  console.log('Updated games data:', cachedData.games.length, 'games');
+  res.json(gamesData);
 });
 
 app.listen(port, () => {
