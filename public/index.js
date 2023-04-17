@@ -11,34 +11,34 @@ function convertGameTimeToDate(gameTime) {
 
 
 async function fetchGames(games, isLoading) {
-  try {
-    const response = await fetch("/api/games");
-    if (response.ok) {
-      const gameData = await response.json();
-      games.value = gameData;
-    } else {
-      console.error("获取比赛信息错误:", response.statusText);
-    }
-  } catch (error) {
-    console.error("获取比赛信息错误:", error.message);
-  } finally {
-    isLoading.value = false;
-  }
+	try {
+		const response = await fetch("/api/games");
+		if (response.ok) {
+			const gameData = await response.json();
+			games.value = gameData;
+		} else {
+			console.error("获取比赛信息错误:", response.statusText);
+		}
+	} catch (error) {
+		console.error("获取比赛信息错误:", error.message);
+	} finally {
+		isLoading.value = false;
+	}
 }
 
 async function fetchLiveLinks(url) {
-  try {
-    const response = await fetch(`/api/parseLiveLinks?url=${encodeURIComponent(url)}`);
-    if (response.ok) {
-      const liveLinks = await response.json();
-      return liveLinks;
-    } else {
-      console.error("获取直播链接错误:", response.statusText);
-    }
-  } catch (error) {
-    console.error("获取直播链接错误:", error.message);
-  }
-  return [];
+	try {
+		const response = await fetch(`/api/parseLiveLinks?url=${encodeURIComponent(url)}`);
+		if (response.ok) {
+			const liveLinks = await response.json();
+			return liveLinks;
+		} else {
+			console.error("获取直播链接错误:", response.statusText);
+		}
+	} catch (error) {
+		console.error("获取直播链接错误:", error.message);
+	}
+	return [];
 }
 
 
@@ -51,7 +51,11 @@ const app = createApp({
 		const modalLinks = ref([]);
 
 
-    fetchGames(games, isLoading);
+		fetchGames(games, isLoading).then(() => {
+			selectedLeagues.value.forEach((leagueId) => {
+				checkAndDeselectLeague(leagueId);
+			});
+		});
 
 		const selectedLeagues = ref(["NBA"]);
 
@@ -60,6 +64,17 @@ const app = createApp({
 
 			// 添加其他联盟对象
 		]);
+
+		const checkAndDeselectLeague = (leagueId) => {
+			const gamesInLeague = filteredGames.value.filter(
+				(game) => game.league === leagueId
+			);
+			if (gamesInLeague.length === 0) {
+				selectedLeagues.value = selectedLeagues.value.filter(
+					(id) => id !== leagueId
+				);
+			}
+		};
 
 
 
@@ -72,7 +87,7 @@ const app = createApp({
 				return true;
 			});
 
-			return visibleGames.filter(game => selectedLeagues.value.length === 0? true : selectedLeagues.value.includes(game.league));
+			return visibleGames.filter(game => selectedLeagues.value.length === 0 ? true : selectedLeagues.value.includes(game.league));
 		});
 
 		const groupedGames = computed(() => {
@@ -116,6 +131,7 @@ const app = createApp({
 			showModal,
 			modalLinks,
 			openLink,
+			checkAndDeselectLeague,
 
 		};
 	},
