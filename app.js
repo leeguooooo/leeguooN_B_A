@@ -81,9 +81,8 @@ app.post('/api/updateGames', async (req, res) => {
   console.log('Received games data from Vercel API');
   const apiKey = req.header('X-Api-Key');
 
-  console.log('apiKey', apiKey);
-
   if (!apiKey || apiKey !== process.env.API_KEY) {
+    console.log('apiKey', apiKey);
     res.status(403).json({ error: 'Invalid API key' });
     return;
   }
