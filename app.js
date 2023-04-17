@@ -183,10 +183,10 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-fetchGamesData();
-setInterval(fetchGamesData,
-  1000 * 60 * 1
-);
+// fetchGamesData();
+// setInterval(fetchGamesData,
+//   1000 * 60 * 1
+// );
 app.listen(port, () => {
   console.log(`Server listening on port http://localhost:${port}`);
 });
