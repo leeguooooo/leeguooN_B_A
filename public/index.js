@@ -77,10 +77,15 @@ const app = createApp({
     const filteredGames = computed(() => {
       const now = new Date();
 
-      const visibleGames = games.value.filter(game => {
-        const gameTime = convertGameTimeToDate(game.gameTime);
-        // return gameTime >= now;
-        return true;
+      // const visibleGames = games.value.filter(game => {
+      //   const gameTime = convertGameTimeToDate(game.gameTime);
+      //   return gameTime >= now;
+      // });
+
+      const visibleGames = games.value.sort((a, b) => {
+        const gameTimeA = convertGameTimeToDate(a.gameTime);
+        const gameTimeB = convertGameTimeToDate(b.gameTime);
+        return gameTimeA - gameTimeB;
       });
 
       return visibleGames.filter(game =>

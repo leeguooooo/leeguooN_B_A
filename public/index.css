@@ -27,10 +27,18 @@ h2 {
 .games {
   list-style-type: none;
   padding: 0;
-  margin: 0;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px 10px;
+  justify-items: center;
+  max-width: 1200px;
+}
+
+@media screen and (min-width: 1200px) {
+  .games {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 ul {
