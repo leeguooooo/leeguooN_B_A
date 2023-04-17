@@ -63,6 +63,7 @@ async function fetchHtml(url) {
 }
 
 async function fetchGamesData() {
+  console.log('Fetching games data...')
   try {
     const $ = await fetchHtml('http://www.jrskan.com/');
 
@@ -125,11 +126,21 @@ let cachedData = {
 };
 const cacheDuration = 3 * 60 * 1000;
 
-app.get('/api/games', (req, res) => {
+app.get('/api/games', async (req, res) => {
   if (cachedData.games) {
     res.json(cachedData.games);
   } else {
-    res.status(500).json({ error: 'An error occurred while fetching data.' });
+    try {
+      await fetchGamesData();
+      if (cachedData.games) {
+        res.json(cachedData.games);
+      } else {
+        res.status(500).json({ error: 'An error occurred while fetching data.' });
+      }
+    } catch (error) {
+      console.error('Error fetching games data:', error.message);
+      res.status(500).json({ error: 'An error occurred while fetching data.' });
+    }
   }
 });
 
@@ -177,6 +188,6 @@ setInterval(fetchGamesData,
   1000 * 60 * 1
 );
 app.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+  console.log(`Server listening on port http://localhost:${port}`);
 });
 
