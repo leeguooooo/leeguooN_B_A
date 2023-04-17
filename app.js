@@ -8,7 +8,6 @@ const chromium = require('chrome-aws-lambda');
 const puppeteer = chromium.puppeteer;
 
 
-
 async function fetchHtml2(url) {
   try {
     const response = await axios.get(url);
@@ -24,15 +23,27 @@ async function fetchHtml(url) {
   try {
     const isVercel = process.env.VERCEL === '1';
     const isProduction = process.env.NODE_ENV === 'production';
-    const executablePath = isVercel || isProduction ? await chromium.executablePath :'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+    const executablePath = isVercel || isProduction ? await chromium.executablePath : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     const browser = await puppeteer.launch({
       executablePath: executablePath,
-      args: chromium.args,
+      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
       defaultViewport: chromium.defaultViewport,
       headless: chromium.headless,
     });
 
     const page = await browser.newPage();
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      if (
+        req.resourceType() == "stylesheet" ||
+        req.resourceType() == "font" ||
+        req.resourceType() == "image"
+      ) {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
 
     page.on('dialog', async (dialog) => {
       console.log(`Closing dialog: ${dialog.message()}`);
@@ -143,7 +154,7 @@ app.get('/api/parseLiveLinks', async (req, res) => {
 
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
-  });
+});
 
 app.listen(port, () => {
   console.log(`Server listening on port ${port}`);
