@@ -7,7 +7,25 @@ const port = process.env.PORT || 3000;
 const fetchGamesData = require('./fetchGamesDataFunction');
 require('dotenv').config();
 
-async function fetchHtml2(url) {
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Helper function to filter games by type
+function filterGamesByType(games, type) {
+  return games.filter(game => game.league === type);
+}
+
+// Helper function to handle errors
+function handleError(res, error) {
+  console.error('Error:', error.message);
+  res.status(500).json({ error: 'An error occurred while fetching data.' });
+}
+
+// Fetch HTML from URL and return Cheerio object
+async function fetchHtml(url) {
   try {
     const response = await axios.get(url);
     return cheerio.load(response.data);
@@ -22,31 +40,30 @@ let cachedData = {
   timestamp: null,
 };
 
-const cacheDuration = 3 * 60 * 1000;
-
 app.get('/api/games', async (req, res) => {
+  const { type } = req.query;
+
   if (cachedData.games) {
-    res.json(cachedData.games);
-  } else {
-    try {
-      const games = await fetchGamesData();
-      if (games) {
-        cachedData.games = games;
-        cachedData.timestamp = new Date().getTime();
-        res.json(games);
-      } else {
-        res
-          .status(500)
-          .json({ error: 'An error occurred while fetching data.' });
-      }
-    } catch (error) {
-      console.error('Error fetching games data:', error.message);
-      res.status(500).json({ error: 'An error occurred while fetching data.' });
-    }
+    const games = type
+      ? filterGamesByType(cachedData.games, type)
+      : cachedData.games;
+    res.json(games);
+    return;
+  }
+
+  try {
+    let games = await fetchGamesData();
+    if (!games) throw new Error('Failed to fetch games data.');
+
+    cachedData.games = games;
+    cachedData.timestamp = new Date().getTime();
+
+    games = type ? filterGamesByType(games, type) : games;
+    res.json(games);
+  } catch (error) {
+    handleError(res, error);
   }
 });
-
-app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/parseLiveLinks', async (req, res) => {
   const url = req.query.url;
@@ -58,9 +75,7 @@ app.get('/api/parseLiveLinks', async (req, res) => {
   const host = url.split('/').slice(0, 3).join('/');
 
   try {
-    // const $ = await fetchHtml(url);
-    const $ = await fetchHtml2(url); // 使用 fetchHtml2 函数
-
+    const $ = await fetchHtml(url);
     const subChannels = $('.sub_channel a.item');
     const liveLinks = [];
 
@@ -107,10 +122,6 @@ app.post('/api/updateGames', async (req, res) => {
   });
 });
 
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
-
 app.post('/fetchGamesData', async (req, res) => {
   console.log('Received games data from Vercel API');
   const apiKey = req.header('X-Api-Key');
@@ -127,7 +138,7 @@ app.post('/fetchGamesData', async (req, res) => {
   cachedData.timestamp = new Date().getTime();
 
   console.log('Updated games data:', cachedData.games.length, 'games');
-  res.json(gamesData);
+  res.json({ success: true });
 });
 
 app.listen(port, () => {
