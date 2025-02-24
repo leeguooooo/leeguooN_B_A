@@ -6,8 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "vercel-build": "apt-get update && apt-get install -y $(cat aptfile)",
-    "build": "echo \"No build step for Express\"",
+    "build": "bash ./vercel.sh",
     "fetchGamesData": "node fetchGamesData.js"
   },
   "keywords": [],
@@ -22,13 +21,7 @@
     "puppeteer-core": "10.1.0",
     "sharp": "^0.32.0"
   },
-  "pnpm": {
-    "version": "6.14.0"
-  },
   "engines": {
     "node": "18.x"
-  },
-  "devDependencies": {
-    "prettier": "^2.8.7"
   }
 }

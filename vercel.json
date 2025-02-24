@@ -3,10 +3,7 @@
   "builds": [
     {
       "src": "app.js",
-      "use": "@vercel/node",
-      "config": {
-        "installCommand": "apt-get update && apt-get install -y $(cat aptfile)"
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -18,5 +15,10 @@
       "src": "/(.*)",
       "dest": "/app.js"
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "VERCEL": "1"
+    }
+  }
 }

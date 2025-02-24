@@ -1,21 +1,27 @@
 const cheerio = require('cheerio');
 const chromium = require('chrome-aws-lambda');
-const puppeteer = chromium.puppeteer;
+const puppeteerCore = require('puppeteer-core');
 
 async function fetchHtml(url) {
   try {
     const isVercel = process.env.VERCEL === '1';
     const isProduction = process.env.NODE_ENV === 'production';
-    const executablePath =
-      isVercel || isProduction
+
+    // 配置浏览器选项
+    const options = {
+      args: isVercel ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security'],
+      defaultViewport: isVercel ? chromium.defaultViewport : {
+        width: 1920,
+        height: 1080
+      },
+      executablePath: isVercel 
         ? await chromium.executablePath
-        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-    const browser = await puppeteer.launch({
-      executablePath: executablePath,
-      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-      defaultViewport: chromium.defaultViewport,
-      headless: chromium.headless,
-    });
+        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      headless: isVercel ? chromium.headless : true
+    };
+
+    // 在 Vercel 环境使用 chrome-aws-lambda，在本地使用 puppeteer-core
+    const browser = await puppeteerCore.launch(options);
 
     const page = await browser.newPage();
     await page.setRequestInterception(true);
@@ -36,7 +42,10 @@ async function fetchHtml(url) {
       await dialog.accept();
     });
 
-    await page.goto(url);
+    await page.goto(url, {
+      waitUntil: 'networkidle0',
+      timeout: 30000
+    });
 
     const content = await page.content();
     await browser.close();
