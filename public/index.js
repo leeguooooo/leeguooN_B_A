@@ -1,4 +1,4 @@
-const { createApp, ref, computed } = Vue;
+const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } = Vue;
 
 function convertGameTimeToDate(gameTime) {
   const currentDate = new Date();
@@ -127,19 +127,90 @@ const app = createApp({
       showModal.value = false;
     };
 
+    // TV Navigation System
+    const currentFocus = ref(null);
+    const focusableElements = ref([]);
+
+    const initializeFocusableElements = () => {
+      focusableElements.value = Array.from(document.querySelectorAll('.focusable'));
+      if (focusableElements.value.length > 0) {
+        focusableElements.value[0].focus();
+        currentFocus.value = 0;
+      }
+    };
+
+    const handleKeyNavigation = (event) => {
+      if (!focusableElements.value.length) return;
+
+      const currentElement = focusableElements.value[currentFocus.value];
+      let nextIndex = currentFocus.value;
+
+      switch (event.key) {
+        case 'ArrowUp':
+          event.preventDefault();
+          nextIndex = Math.max(0, currentFocus.value - 1);
+          break;
+        case 'ArrowDown':
+          event.preventDefault();
+          nextIndex = Math.min(focusableElements.value.length - 1, currentFocus.value + 1);
+          break;
+        case 'Enter':
+          event.preventDefault();
+          currentElement.click();
+          break;
+        case 'Escape':
+          if (showModal.value) {
+            showModal.value = false;
+          }
+          break;
+      }
+
+      if (nextIndex !== currentFocus.value) {
+        currentFocus.value = nextIndex;
+        focusableElements.value[nextIndex].focus();
+      }
+    };
+
+    // Watch for changes in the DOM that might affect focusable elements
+    watch([games, showModal], () => {
+      nextTick(() => {
+        initializeFocusableElements();
+      });
+    });
+
+    // Mount keyboard navigation
+    onMounted(() => {
+      window.addEventListener('keydown', handleKeyNavigation);
+      initializeFocusableElements();
+    });
+
+    onUnmounted(() => {
+      window.removeEventListener('keydown', handleKeyNavigation);
+    });
+
     return {
       games,
-      groupedGames,
-      openLiveLink,
-      selectedLeagues,
-      leagues,
       isLoading,
       showModal,
       modalLinks,
-      openLink,
-      checkAndDeselectLeague,
+      selectedLeagues,
+      leagues,
+      groupedGames,
+      openLiveLink: async (url) => {
+        const links = await fetchLiveLinks(url);
+        if (links.length > 0) {
+          modalLinks.value = links;
+          showModal.value = true;
+          nextTick(() => {
+            initializeFocusableElements();
+          });
+        }
+      },
+      openLink: (url) => {
+        window.location.href = url;
+      }
     };
-  },
+  }
 });
 
 app.mount('#app');

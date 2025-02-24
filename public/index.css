@@ -319,3 +319,51 @@ button {
     font-size: 16px;
   }
 }
+
+/* TV Focus Styles */
+:focus {
+  outline: none;
+}
+
+.focusable:focus, .focusable.focused {
+  outline: 3px solid #00ff00;
+  outline-offset: 2px;
+  transform: scale(1.05);
+  transition: all 0.2s ease;
+}
+
+/* TV Layout Optimization */
+body {
+  padding: 2rem;
+  font-size: 1.2rem;
+}
+
+.games li {
+  padding: 1.5rem;
+  margin: 1rem 0;
+  cursor: pointer;
+}
+
+.live-link-btn button {
+  padding: 1rem 2rem;
+  font-size: 1.2rem;
+  margin: 0.5rem;
+  min-width: 150px;
+}
+
+.checkbox-label {
+  padding: 1rem;
+  margin: 0.5rem;
+  font-size: 1.2rem;
+}
+
+/* Add scroll indicators */
+.games::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+.games::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 5px;
+}
