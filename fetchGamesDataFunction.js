@@ -1,20 +1,12 @@
 const cheerio = require('cheerio');
-const chromium = require('chrome-aws-lambda');
-const puppeteer = chromium.puppeteer;
+const puppeteer = require('puppeteer-core');
 
 async function fetchHtml(url) {
   try {
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.NODE_ENV === 'production';
-    const executablePath =
-      isVercel || isProduction
-        ? await chromium.executablePath
-        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
     const browser = await puppeteer.launch({
-      executablePath: executablePath,
-      args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
-      defaultViewport: chromium.defaultViewport,
-      headless: chromium.headless,
+      headless: "new",
+      executablePath: '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+      args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security']
     });
 
     const page = await browser.newPage();
