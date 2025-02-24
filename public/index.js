@@ -108,23 +108,47 @@ const app = createApp({
       return gamesByDate;
     });
 
-    const openLiveLink = async url => {
-      const liveLinks = await fetchLiveLinks(url);
-      const targetLink = liveLinks.find(link =>
-        link.name.includes('中文高清 Q')
-      );
+    // 存储弹窗打开前的焦点元素
+    const previousFocus = ref(null);
 
-      if (targetLink) {
-        window.open(targetLink.url, '_self');
-      } else {
-        showModal.value = true;
-        modalLinks.value = liveLinks;
+    const openLiveLink = async url => {
+      try {
+        const liveLinks = await fetchLiveLinks(url);
+        const targetLink = liveLinks.find(link =>
+          link.name.includes('中文高清 Q')
+        );
+
+        if (targetLink) {
+          window.location.href = targetLink.url;
+        } else if (liveLinks.length > 0) {
+          // 保存当前焦点元素
+          previousFocus.value = document.activeElement;
+          modalLinks.value = liveLinks;
+          showModal.value = true;
+          nextTick(() => {
+            // 重新初始化可聚焦元素并聚焦到第一个按钮
+            initializeFocusableElements();
+            const modalButtons = document.querySelectorAll('.modal button');
+            if (modalButtons.length > 0) {
+              modalButtons[0].focus();
+              currentFocus.value = focusableElements.value.indexOf(modalButtons[0]);
+            }
+          });
+        } else {
+          console.error('No live links found');
+        }
+      } catch (error) {
+        console.error('Error opening live link:', error);
       }
     };
 
     const openLink = url => {
-      window.open(url, '_self');
-      showModal.value = false;
+      try {
+        window.location.href = url;
+        showModal.value = false;
+      } catch (error) {
+        console.error('Error opening link:', error);
+      }
     };
 
     // TV Navigation System
@@ -145,22 +169,52 @@ const app = createApp({
       const currentElement = focusableElements.value[currentFocus.value];
       let nextIndex = currentFocus.value;
 
-      switch (event.key) {
+      // 处理 Apple TV 遥控器和键盘事件
+      switch (event.key || event.keyIdentifier) {
         case 'ArrowUp':
+        case 'Up':
           event.preventDefault();
-          nextIndex = Math.max(0, currentFocus.value - 1);
+          if (showModal.value) {
+            // 在弹窗内向上导航
+            const modalButtons = Array.from(document.querySelectorAll('.modal button'));
+            const currentModalIndex = modalButtons.indexOf(currentElement);
+            if (currentModalIndex > 0) {
+              nextIndex = focusableElements.value.indexOf(modalButtons[currentModalIndex - 1]);
+            }
+          } else {
+            nextIndex = Math.max(0, currentFocus.value - 1);
+          }
           break;
         case 'ArrowDown':
+        case 'Down':
           event.preventDefault();
-          nextIndex = Math.min(focusableElements.value.length - 1, currentFocus.value + 1);
+          if (showModal.value) {
+            // 在弹窗内向下导航
+            const modalButtons = Array.from(document.querySelectorAll('.modal button'));
+            const currentModalIndex = modalButtons.indexOf(currentElement);
+            if (currentModalIndex < modalButtons.length - 1) {
+              nextIndex = focusableElements.value.indexOf(modalButtons[currentModalIndex + 1]);
+            }
+          } else {
+            nextIndex = Math.min(focusableElements.value.length - 1, currentFocus.value + 1);
+          }
           break;
         case 'Enter':
+        case 'Select':  // Apple TV 遥控器确认键
           event.preventDefault();
           currentElement.click();
           break;
         case 'Escape':
+        case 'Menu':    // Apple TV 遥控器菜单键
           if (showModal.value) {
             showModal.value = false;
+            // 恢复之前的焦点
+            nextTick(() => {
+              if (previousFocus.value) {
+                previousFocus.value.focus();
+                currentFocus.value = focusableElements.value.indexOf(previousFocus.value);
+              }
+            });
           }
           break;
       }
@@ -171,21 +225,48 @@ const app = createApp({
       }
     };
 
+    // 监听 keydown 和 Apple TV 遥控器事件
+    const setupEventListeners = () => {
+      window.addEventListener('keydown', handleKeyNavigation);
+      
+      // Apple TV 遥控器事件
+      window.addEventListener('select', (e) => {
+        e.preventDefault();
+        const currentElement = focusableElements.value[currentFocus.value];
+        if (currentElement) {
+          currentElement.click();
+        }
+      });
+    };
+
     // Watch for changes in the DOM that might affect focusable elements
-    watch([games, showModal], () => {
+    watch([games, showModal, filteredGames], () => {
       nextTick(() => {
         initializeFocusableElements();
+        // 确保焦点在有效的可见元素上
+        if (currentFocus.value !== null && focusableElements.value.length > 0) {
+          currentFocus.value = Math.min(currentFocus.value, focusableElements.value.length - 1);
+          focusableElements.value[currentFocus.value].focus();
+        }
       });
     });
 
     // Mount keyboard navigation
     onMounted(() => {
-      window.addEventListener('keydown', handleKeyNavigation);
+      setupEventListeners();
       initializeFocusableElements();
+
+      // 自动聚焦到第一个元素
+      nextTick(() => {
+        if (focusableElements.value.length > 0) {
+          focusableElements.value[0].focus();
+        }
+      });
     });
 
     onUnmounted(() => {
       window.removeEventListener('keydown', handleKeyNavigation);
+      window.removeEventListener('select', handleKeyNavigation);
     });
 
     return {
