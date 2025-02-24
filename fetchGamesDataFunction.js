@@ -3,27 +3,29 @@ const chromium = require('chrome-aws-lambda');
 const puppeteerCore = require('puppeteer-core');
 
 async function fetchHtml(url) {
+  let browser = null;
   try {
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.NODE_ENV === 'production';
+    const executablePath = process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
-    // 配置浏览器选项
     const options = {
-      args: isVercel ? chromium.args : ['--no-sandbox', '--disable-setuid-sandbox', '--disable-web-security'],
-      defaultViewport: isVercel ? chromium.defaultViewport : {
+      args: chromium.args,
+      executablePath: executablePath,
+      headless: chromium.headless,
+      defaultViewport: {
         width: 1920,
         height: 1080
-      },
-      executablePath: isVercel 
-        ? await chromium.executablePath
-        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-      headless: isVercel ? chromium.headless : true
+      }
     };
 
-    // 在 Vercel 环境使用 chrome-aws-lambda，在本地使用 puppeteer-core
-    const browser = await puppeteerCore.launch(options);
+    // 在本地环境添加额外的参数
+    if (!process.env.VERCEL) {
+      options.args = ['--no-sandbox', '--disable-setuid-sandbox'];
+    }
 
+    browser = await puppeteerCore.launch(options);
     const page = await browser.newPage();
+
+    // 设置请求拦截
     await page.setRequestInterception(true);
     page.on('request', req => {
       if (
@@ -37,23 +39,29 @@ async function fetchHtml(url) {
       }
     });
 
+    // 处理对话框
     page.on('dialog', async dialog => {
       console.log(`Closing dialog: ${dialog.message()}`);
       await dialog.accept();
     });
 
+    // 设置页面超时
     await page.goto(url, {
       waitUntil: 'networkidle0',
       timeout: 30000
     });
 
     const content = await page.content();
-    await browser.close();
-
     return cheerio.load(content);
+
   } catch (error) {
     console.error(`Error fetching URL: ${url}`);
+    console.error(error);
     throw error;
+  } finally {
+    if (browser !== null) {
+      await browser.close().catch(console.error);
+    }
   }
 }
 
