@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node app.js",
-    "vercel-postinstall": "apt-get update && apt-get install -y $(cat aptfile)",
+    "vercel-build": "apt-get update && apt-get install -y $(cat aptfile)",
     "build": "echo \"No build step for Express\"",
     "fetchGamesData": "node fetchGamesData.js"
   },
