@@ -1,26 +1,70 @@
 const cheerio = require('cheerio');
-const puppeteerCore = require('puppeteer-core');
+const puppeteer = require('puppeteer');
+const axios = require('axios');
+
+async function fetchWithAxios(url) {
+  try {
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache',
+        'Upgrade-Insecure-Requests': '1'
+      },
+      timeout: 10000,
+      maxRedirects: 5
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Axios fetch failed:', error.message);
+    throw error;
+  }
+}
 
 async function fetchHtml(url) {
   let browser = null;
   try {
+    // 首先尝试使用 axios
+    try {
+      console.log('Attempting to fetch with Axios...');
+      const content = await fetchWithAxios(url);
+      return cheerio.load(content);
+    } catch (axiosError) {
+      console.log('Axios failed, falling back to Puppeteer...');
+    }
+
+    // 如果 axios 失败，使用 Puppeteer
     const options = {
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--disable-web-security',
+        '--disable-features=IsolateOrigins,site-per-process',
+        '--window-size=1920,1080'
       ],
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
-      headless: true,
+      headless: 'new',
       defaultViewport: {
         width: 1920,
         height: 1080
-      }
+      },
+      timeout: 30000
     };
 
-    browser = await puppeteerCore.launch(options);
+    browser = await puppeteer.launch(options);
     const page = await browser.newPage();
+
+    // 设置请求头
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Connection': 'keep-alive',
+      'Cache-Control': 'max-age=0'
+    });
 
     // 设置请求拦截
     await page.setRequestInterception(true);
@@ -42,22 +86,44 @@ async function fetchHtml(url) {
       await dialog.accept();
     });
 
-    // 设置页面超时
-    await page.goto(url, {
-      waitUntil: 'networkidle0',
-      timeout: 30000
-    });
+    // 添加超时和重试机制
+    let retries = 3;
+    let content = null;
+    
+    while (retries > 0 && !content) {
+      try {
+        await page.setDefaultNavigationTimeout(30000);
+        await page.goto(url, { 
+          waitUntil: ['networkidle0', 'domcontentloaded'],
+          timeout: 30000 
+        });
+        
+        await page.waitForSelector('body');
+        content = await page.content();
+        
+      } catch (error) {
+        console.error(`Attempt ${4 - retries} failed:`, error.message);
+        retries--;
+        if (retries > 0) {
+          console.log(`Retrying... ${retries} attempts remaining`);
+          await new Promise(resolve => setTimeout(resolve, 2000));
+        }
+      }
+    }
 
-    const content = await page.content();
+    if (!content) {
+      throw new Error('Failed to fetch content after all retries');
+    }
+
     return cheerio.load(content);
 
   } catch (error) {
-    console.error(`Error fetching URL: ${url}`);
+    console.error('Error fetching URL:', url);
     console.error(error);
     throw error;
   } finally {
-    if (browser !== null) {
-      await browser.close().catch(console.error);
+    if (browser) {
+      await browser.close();
     }
   }
 }
