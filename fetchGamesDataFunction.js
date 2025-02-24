@@ -1,26 +1,23 @@
 const cheerio = require('cheerio');
-const chromium = require('chrome-aws-lambda');
 const puppeteerCore = require('puppeteer-core');
 
 async function fetchHtml(url) {
   let browser = null;
   try {
-    const executablePath = process.env.CHROME_EXECUTABLE_PATH || await chromium.executablePath || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-
     const options = {
-      args: chromium.args,
-      executablePath: executablePath,
-      headless: chromium.headless,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser',
+      headless: true,
       defaultViewport: {
         width: 1920,
         height: 1080
       }
     };
-
-    // 在本地环境添加额外的参数
-    if (!process.env.VERCEL) {
-      options.args = ['--no-sandbox', '--disable-setuid-sandbox'];
-    }
 
     browser = await puppeteerCore.launch(options);
     const page = await browser.newPage();

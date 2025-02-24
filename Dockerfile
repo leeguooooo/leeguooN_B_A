@@ -1,17 +1,46 @@
-# Use an official Node.js runtime as the base image
-FROM node:14
+# Build stage
+FROM node:18-alpine AS builder
 
-# Set the working directory in the container
+# Set working directory
 WORKDIR /app
 
-# Copy the package.json file to the container
-COPY package.json .
+# Copy package files
+COPY package*.json ./
+COPY pnpm-lock.yaml ./
 
-# Install the project dependencies
-RUN npm install
+# Install dependencies
+RUN npm install -g pnpm && \
+    pnpm install --frozen-lockfile
 
-# Copy the rest of the application code to the container
+# Copy application files
 COPY . .
 
-# Specify the command to run when the container starts
-CMD ["npm", "start"]
+# Production stage
+FROM node:18-alpine
+
+# Install necessary system dependencies for Puppeteer
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    freetype-dev \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    nodejs
+
+# Set environment variables for Puppeteer
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+WORKDIR /app
+
+# Copy built application from builder stage
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app .
+
+# Expose the port the app runs on
+EXPOSE 3000
+
+# Start the application
+CMD ["node", "app.js"]
