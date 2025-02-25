@@ -1,4 +1,5 @@
-const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } = Vue;
+const { createApp, ref, computed, watch, onMounted, onUnmounted, nextTick } =
+  Vue;
 
 function convertGameTimeToDate(gameTime) {
   const currentDate = new Date();
@@ -112,6 +113,7 @@ const app = createApp({
     const previousFocus = ref(null);
 
     const openLiveLink = async url => {
+      debugger;
       try {
         const liveLinks = await fetchLiveLinks(url);
         const targetLink = liveLinks.find(link =>
@@ -131,7 +133,9 @@ const app = createApp({
             const modalButtons = document.querySelectorAll('.modal button');
             if (modalButtons.length > 0) {
               modalButtons[0].focus();
-              currentFocus.value = focusableElements.value.indexOf(modalButtons[0]);
+              currentFocus.value = focusableElements.value.indexOf(
+                modalButtons[0]
+              );
             }
           });
         } else {
@@ -142,12 +146,28 @@ const app = createApp({
       }
     };
 
-    const openLink = url => {
+    const openLink = async url => {
       try {
-        window.location.href = url;
+        const response = await fetch(
+          `/api/getIframeSrc?url=${encodeURIComponent(url)}`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          if (data.url) {
+            const noRefererLink = document.createElement('a');
+            noRefererLink.href = data.url;
+            noRefererLink.rel = 'noreferrer';
+            noRefererLink.target = '_blank';
+            noRefererLink.click();
+          } else {
+            console.error('获取iframe地址失败：地址为空');
+          }
+        } else {
+          console.error('获取iframe地址失败:', response.statusText);
+        }
         showModal.value = false;
       } catch (error) {
-        console.error('Error opening link:', error);
+        console.error('获取iframe地址错误:', error.message);
       }
     };
 
@@ -156,14 +176,16 @@ const app = createApp({
     const focusableElements = ref([]);
 
     const initializeFocusableElements = () => {
-      focusableElements.value = Array.from(document.querySelectorAll('.focusable'));
+      focusableElements.value = Array.from(
+        document.querySelectorAll('.focusable')
+      );
       if (focusableElements.value.length > 0) {
         focusableElements.value[0].focus();
         currentFocus.value = 0;
       }
     };
 
-    const handleKeyNavigation = (event) => {
+    const handleKeyNavigation = event => {
       if (!focusableElements.value.length) return;
 
       const currentElement = focusableElements.value[currentFocus.value];
@@ -176,10 +198,14 @@ const app = createApp({
           event.preventDefault();
           if (showModal.value) {
             // 在弹窗内向上导航
-            const modalButtons = Array.from(document.querySelectorAll('.modal button'));
+            const modalButtons = Array.from(
+              document.querySelectorAll('.modal button')
+            );
             const currentModalIndex = modalButtons.indexOf(currentElement);
             if (currentModalIndex > 0) {
-              nextIndex = focusableElements.value.indexOf(modalButtons[currentModalIndex - 1]);
+              nextIndex = focusableElements.value.indexOf(
+                modalButtons[currentModalIndex - 1]
+              );
             }
           } else {
             nextIndex = Math.max(0, currentFocus.value - 1);
@@ -190,29 +216,38 @@ const app = createApp({
           event.preventDefault();
           if (showModal.value) {
             // 在弹窗内向下导航
-            const modalButtons = Array.from(document.querySelectorAll('.modal button'));
+            const modalButtons = Array.from(
+              document.querySelectorAll('.modal button')
+            );
             const currentModalIndex = modalButtons.indexOf(currentElement);
             if (currentModalIndex < modalButtons.length - 1) {
-              nextIndex = focusableElements.value.indexOf(modalButtons[currentModalIndex + 1]);
+              nextIndex = focusableElements.value.indexOf(
+                modalButtons[currentModalIndex + 1]
+              );
             }
           } else {
-            nextIndex = Math.min(focusableElements.value.length - 1, currentFocus.value + 1);
+            nextIndex = Math.min(
+              focusableElements.value.length - 1,
+              currentFocus.value + 1
+            );
           }
           break;
         case 'Enter':
-        case 'Select':  // Apple TV 遥控器确认键
+        case 'Select': // Apple TV 遥控器确认键
           event.preventDefault();
           currentElement.click();
           break;
         case 'Escape':
-        case 'Menu':    // Apple TV 遥控器菜单键
+        case 'Menu': // Apple TV 遥控器菜单键
           if (showModal.value) {
             showModal.value = false;
             // 恢复之前的焦点
             nextTick(() => {
               if (previousFocus.value) {
                 previousFocus.value.focus();
-                currentFocus.value = focusableElements.value.indexOf(previousFocus.value);
+                currentFocus.value = focusableElements.value.indexOf(
+                  previousFocus.value
+                );
               }
             });
           }
@@ -228,9 +263,9 @@ const app = createApp({
     // 监听 keydown 和 Apple TV 遥控器事件
     const setupEventListeners = () => {
       window.addEventListener('keydown', handleKeyNavigation);
-      
+
       // Apple TV 遥控器事件
-      window.addEventListener('select', (e) => {
+      window.addEventListener('select', e => {
         e.preventDefault();
         const currentElement = focusableElements.value[currentFocus.value];
         if (currentElement) {
@@ -245,7 +280,10 @@ const app = createApp({
         initializeFocusableElements();
         // 确保焦点在有效的可见元素上
         if (currentFocus.value !== null && focusableElements.value.length > 0) {
-          currentFocus.value = Math.min(currentFocus.value, focusableElements.value.length - 1);
+          currentFocus.value = Math.min(
+            currentFocus.value,
+            focusableElements.value.length - 1
+          );
           focusableElements.value[currentFocus.value].focus();
         }
       });
@@ -277,7 +315,7 @@ const app = createApp({
       selectedLeagues,
       leagues,
       groupedGames,
-      openLiveLink: async (url) => {
+      openLiveLink: async url => {
         const links = await fetchLiveLinks(url);
         if (links.length > 0) {
           modalLinks.value = links;
@@ -287,11 +325,31 @@ const app = createApp({
           });
         }
       },
-      openLink: (url) => {
-        window.location.href = url;
-      }
+      openLink: async url => {
+        try {
+          const response = await fetch(
+            `/api/getIframeSrc?url=${encodeURIComponent(url)}`
+          );
+          if (response.ok) {
+            const data = await response.json();
+            if (data.url) {
+              const noRefererLink = document.createElement('a');
+              noRefererLink.href = data.url;
+              noRefererLink.rel = 'noreferrer';
+              noRefererLink.click();
+            } else {
+              console.error('获取iframe地址失败：地址为空');
+            }
+          } else {
+            console.error('获取iframe地址失败:', response.statusText);
+          }
+          showModal.value = false;
+        } catch (error) {
+          console.error('获取iframe地址错误:', error.message);
+        }
+      },
     };
-  }
+  },
 });
 
 app.mount('#app');

@@ -5,6 +5,8 @@ const cheerio = require('cheerio');
 const app = express();
 const port = process.env.PORT || 3000;
 const fetchGamesData = require('./fetchGamesDataFunction');
+const getFullIframeSrc = require('./decode_url.js');
+
 require('dotenv').config();
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -139,6 +141,22 @@ app.post('/fetchGamesData', async (req, res) => {
 
   console.log('Updated games data:', cachedData.games.length, 'games');
   res.json({ success: true });
+});
+
+app.get('/api/getIframeSrc', async (req, res) => {
+  const url = req.query.url;
+  if (!url) {
+    res.status(400).json({ error: '缺少URL参数' });
+    return;
+  }
+
+  try {
+    const iframeSrc = await getFullIframeSrc(url);
+    res.json({ url: iframeSrc });
+  } catch (error) {
+    console.error('获取iframe地址错误:', error.message);
+    res.status(500).json({ error: '获取iframe地址失败' });
+  }
 });
 
 app.listen(port, () => {
