@@ -37,10 +37,7 @@
     }
   ],
   "crons": [
-    {
-      "path": "/api/cron-refresh",
-      "schedule": "* * * * *"
-    }
+
   ],
   "env": {
     "CRON_SECRET": "@cron_secret",
