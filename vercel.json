@@ -39,7 +39,7 @@
   "crons": [
     {
       "path": "/api/cron-refresh",
-      "schedule": "*/30 * * * *"
+      "schedule": "* * * * *"
     }
   ],
   "env": {
