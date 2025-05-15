@@ -1,6 +1,7 @@
 const cheerio = require('cheerio');
+const { getBrowser } = require('./utils/browser');
+// Keep chrome-aws-lambda for compatibility with existing code
 const chromium = require('chrome-aws-lambda');
-const puppeteer = chromium.puppeteer;
 const fs = require('fs');
 const path = require('path');
 
@@ -105,31 +106,8 @@ async function getLatestUrl() {
   let browser = null;
   
   try {
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.NODE_ENV === 'production';
-    const executablePath =
-      isVercel || isProduction
-        ? await chromium.executablePath
-        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-        
-    browser = await puppeteer.launch({
-      executablePath: executablePath,
-      args: [
-        ...chromium.args,
-        '--hide-scrollbars',
-        '--disable-web-security',
-        '--disable-dev-shm-usage',
-        '--disable-infobars',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-features=site-per-process',
-        '--disable-extensions',
-        '--disable-gpu',
-        '--single-process'
-      ],
-      defaultViewport: chromium.defaultViewport,
-      headless: true,
-    });
+    // 使用新的 getBrowser 工具函数
+    browser = await getBrowser();
 
     const page = await browser.newPage();
     await page.setRequestInterception(true);
@@ -162,7 +140,7 @@ async function getLatestUrl() {
 
     // 等待页面内容加载
     await page.waitForSelector('ul, li a, a', { timeout: PAGE_TIMEOUT });
-    
+
     const content = await page.content();
     const $ = cheerio.load(content);
     
@@ -257,31 +235,8 @@ async function fetchHtml(url, retryCount = 0) {
   let browser = null;
   
   try {
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.NODE_ENV === 'production';
-    const executablePath =
-      isVercel || isProduction
-        ? await chromium.executablePath
-        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
-        
-    browser = await puppeteer.launch({
-      executablePath: executablePath,
-      args: [
-        ...chromium.args,
-        '--hide-scrollbars',
-        '--disable-web-security',
-        '--disable-dev-shm-usage',
-        '--disable-infobars',
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-features=site-per-process',
-        '--disable-extensions',
-        '--disable-gpu',
-        '--single-process'
-      ],
-      defaultViewport: chromium.defaultViewport,
-      headless: true,
-    });
+    // 使用新的 getBrowser 工具函数
+    browser = await getBrowser();
 
     const page = await browser.newPage();
     
@@ -372,7 +327,7 @@ async function fetchGamesData() {
     // 获取最新的网址
     const latestUrl = await getLatestUrl();
     console.log(`Using URL: ${latestUrl}`);
-    
+
     // 使用获取到的网址爬取数据
     const $ = await fetchHtml(latestUrl);
     const matchList = $('div.loc_match_list');

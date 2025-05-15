@@ -21,7 +21,7 @@ async function updateGameData(retryCount = 0) {
     if (!gamesData || gamesData.length === 0) {
       throw new Error('No games data returned or empty data');
     }
-    
+
     const apiUrl =
       process.env.VERCEL_API_URL || 'http://localhost:3000/api/updateGames';
     const apiKey = process.env.API_KEY;

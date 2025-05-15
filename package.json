@@ -21,16 +21,18 @@
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "node-fetch": "^2.6.9",
-    "puppeteer-core": "10.1.0",
-    "sharp": "^0.32.0"
+    "@sparticuz/chromium": "^123.0.0",
+    "sharp": "^0.32.0",
+    "puppeteer-core": "^22.6.2"
   },
   "pnpm": {
     "version": "6.14.0"
   },
   "engines": {
-    "node": "22.x"
+    "node": "18.x"
   },
   "devDependencies": {
-    "prettier": "^2.8.7"
+    "prettier": "^2.8.7",
+    "puppeteer": "^22.6.0"
   }
 }
