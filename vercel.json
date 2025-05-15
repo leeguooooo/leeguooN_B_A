@@ -40,8 +40,8 @@
 
   ],
   "env": {
-    "CRON_SECRET": "@cron_secret",
-    "API_KEY": "@api_key",
+    "CRON_SECRET": "8f71d53c-8d5e-4b8a-b6d9-74e9c5a4e8f7",
+    "API_KEY": "kuaikuaishiyongshuangjiegunheiheihahei",
     "VERCEL": "1"
   }
 }
