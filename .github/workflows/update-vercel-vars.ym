@@ -1,0 +1,27 @@
+name: Update Vercel Environment Variables
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天UTC 00:00运行 (调整为您需要的时间)
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-env-vars:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+          
+      - name: Install dependencies
+        run: npm install node-fetch@2 cheerio puppeteer
+        
+      - name: Update Vercel Environment Variables
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}  # 如果项目属于团队则需要
+        run: node .github/scripts/update-vercel-env.js

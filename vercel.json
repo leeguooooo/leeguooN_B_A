@@ -4,9 +4,29 @@
     {
       "src": "app.js",
       "use": "@vercel/node"
+    },
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
     }
   ],
   "routes": [
+    {
+      "src": "/api/manual-refresh",
+      "dest": "/api/manual-refresh.js"
+    },
+    {
+      "src": "/api/cron-refresh",
+      "dest": "/api/cron-refresh.js"
+    },
+    {
+      "src": "/api/cache-status",
+      "dest": "/api/cache-status.js"
+    },
+    {
+      "src": "/api/updateGames",
+      "dest": "/api/updateGames.js"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/app.js"
@@ -15,5 +35,16 @@
       "src": "/(.*)",
       "dest": "/app.js"
     }
-  ]
+  ],
+  "crons": [
+    {
+      "path": "/api/cron-refresh",
+      "schedule": "*/15 * * * *"
+    }
+  ],
+  "env": {
+    "CRON_SECRET": "@cron_secret",
+    "API_KEY": "@api_key",
+    "VERCEL": "1"
+  }
 }
