@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>系统状态</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.5;
+    }
+    .card {
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .status {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    .status-label {
+      font-weight: bold;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: white;
+    }
+    .badge-success {
+      background-color: #28a745;
+    }
+    .badge-warning {
+      background-color: #ffc107;
+      color: #212529;
+    }
+    .badge-danger {
+      background-color: #dc3545;
+    }
+    .badge-info {
+      background-color: #17a2b8;
+    }
+    .button {
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      padding: 10px 15px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    .button:hover {
+      background-color: #0069d9;
+    }
+    .button:disabled {
+      background-color: #6c757d;
+      cursor: not-allowed;
+    }
+  </style>
+</head>
+<body>
+  <h1>系统状态</h1>
+  
+  <div id="status-message"></div>
+  
+  <div class="card">
+    <h2>缓存状态</h2>
+    <div id="cache-status">
+      <div class="status">
+        <span class="status-label">加载中...</span>
+      </div>
+    </div>
+    <button id="refresh-button" class="button">手动刷新缓存</button>
+  </div>
+  
+  <script>
+    const apiKey = prompt('请输入API密钥:');
+    if (!apiKey) {
+      document.body.innerHTML = '<h1>需要API密钥</h1><p>请刷新页面重试</p>';
+    }
+    
+    async function fetchCacheStatus() {
+      try {
+        const response = await fetch('/api/cache-status', {
+          headers: {
+            'X-Api-Key': apiKey
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`状态码: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        displayCacheStatus(data);
+      } catch (error) {
+        document.getElementById('status-message').innerHTML = `
+          <div class="card" style="background-color: #f8d7da; color: #721c24;">
+            <p>获取缓存状态失败: ${error.message}</p>
+          </div>
+        `;
+      }
+    }
+    
+    function displayCacheStatus(data) {
+      const statusContainer = document.getElementById('cache-status');
+      statusContainer.innerHTML = '';
+      
+      // 缓存健康状态
+      const healthStatus = !data.isCacheExpired
+        ? '<span class="badge badge-success">健康</span>'
+        : '<span class="badge badge-danger">过期</span>';
+      
+      // 刷新状态
+      const refreshingStatus = data.isRefreshing
+        ? '<span class="badge badge-info">刷新中</span>'
+        : (data.shouldRefresh
+            ? '<span class="badge badge-warning">需要刷新</span>' 
+            : '<span class="badge badge-success">最新</span>');
+      
+      const statusItems = [
+        { label: '缓存状态', value: healthStatus },
+        { label: '刷新状态', value: refreshingStatus },
+        { label: '游戏数量', value: data.gamesCount },
+        { label: '最后更新时间', value: data.cacheTimestamp ? new Date(data.cacheTimestamp).toLocaleString() : '从未' },
+        { label: '缓存年龄', value: data.cacheAge || '未知' }
+      ];
+      
+      statusItems.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'status';
+        div.innerHTML = `
+          <span class="status-label">${item.label}:</span>
+          <span>${item.value}</span>
+        `;
+        statusContainer.appendChild(div);
+      });
+      
+      // 启用或禁用刷新按钮
+      const refreshButton = document.getElementById('refresh-button');
+      refreshButton.disabled = data.isRefreshing;
+      refreshButton.textContent = data.isRefreshing ? '刷新中...' : '手动刷新缓存';
+    }
+    
+    async function refreshCache() {
+      try {
+        const refreshButton = document.getElementById('refresh-button');
+        refreshButton.disabled = true;
+        refreshButton.textContent = '刷新中...';
+        
+        const response = await fetch('/api/manual-refresh', {
+          method: 'POST',
+          headers: {
+            'X-Api-Key': apiKey
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`状态码: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        document.getElementById('status-message').innerHTML = `
+          <div class="card" style="background-color: #d4edda; color: #155724; margin-bottom: 20px;">
+            <p>已触发缓存刷新。${result.message}</p>
+          </div>
+        `;
+        
+        // 等待几秒后刷新状态
+        setTimeout(fetchCacheStatus, 2000);
+      } catch (error) {
+        document.getElementById('status-message').innerHTML = `
+          <div class="card" style="background-color: #f8d7da; color: #721c24; margin-bottom: 20px;">
+            <p>刷新缓存失败: ${error.message}</p>
+          </div>
+        `;
+        const refreshButton = document.getElementById('refresh-button');
+        refreshButton.disabled = false;
+        refreshButton.textContent = '手动刷新缓存';
+      }
+    }
+    
+    // 页面加载时获取缓存状态
+    fetchCacheStatus();
+    
+    // 设置定时刷新
+    setInterval(fetchCacheStatus, 10000);
+    
+    // 设置刷新按钮点击事件
+    document.getElementById('refresh-button').addEventListener('click', refreshCache);
+  </script>
+</body>
+</html> 

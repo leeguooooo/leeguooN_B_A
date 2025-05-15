@@ -8,7 +8,8 @@
     "start": "node app.js",
     "vercel-postinstall": "apt-get update && apt-get install -y $(cat aptfile)",
     "build": "echo \"No build step for Express\"",
-    "fetchGamesData": "node fetchGamesData.js"
+    "fetchGamesData": "node fetchGamesData.js",
+    "refresh-cache": "node refreshCache.js"
   },
   "keywords": [],
   "author": "leeguoo",
@@ -19,6 +20,7 @@
     "chrome-aws-lambda": "10.1.0",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "node-fetch": "^2.6.9",
     "puppeteer-core": "10.1.0",
     "sharp": "^0.32.0"
   },
