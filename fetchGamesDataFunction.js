@@ -115,19 +115,20 @@ async function getLatestUrl() {
     browser = await puppeteer.launch({
       executablePath: executablePath,
       args: [
-        ...chromium.args, 
-        '--hide-scrollbars', 
+        ...chromium.args,
+        '--hide-scrollbars',
         '--disable-web-security',
-        '--disable-dev-shm-usage', 
+        '--disable-dev-shm-usage',
         '--disable-infobars',
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-features=site-per-process',
         '--disable-extensions',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--single-process'
       ],
       defaultViewport: chromium.defaultViewport,
-      headless: chromium.headless,
+      headless: true,
     });
 
     const page = await browser.newPage();
@@ -266,19 +267,20 @@ async function fetchHtml(url, retryCount = 0) {
     browser = await puppeteer.launch({
       executablePath: executablePath,
       args: [
-        ...chromium.args, 
-        '--hide-scrollbars', 
+        ...chromium.args,
+        '--hide-scrollbars',
         '--disable-web-security',
-        '--disable-dev-shm-usage', // 减少内存使用
+        '--disable-dev-shm-usage',
         '--disable-infobars',
         '--no-sandbox',
         '--disable-setuid-sandbox',
-        '--disable-features=site-per-process', // 提高性能
+        '--disable-features=site-per-process',
         '--disable-extensions',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--single-process'
       ],
       defaultViewport: chromium.defaultViewport,
-      headless: chromium.headless,
+      headless: true,
     });
 
     const page = await browser.newPage();
