@@ -1,0 +1,29 @@
+# 忽略开发和测试文件
+node_modules
+.env
+.env.local
+*.log
+test-*.js
+debug-*.html
+working-site-*.html
+.git
+.github
+.vscode
+.idea
+.DS_Store
+
+# 忽略源文件（只需要构建后的文件）
+/src
+/public
+*.md
+*.sh
+
+# Swift/tvOS 相关
+Sources/
+Package.swift
+Package.resolved
+.build/
+
+# 开发工具
+.claude/
+CLAUDE.md
