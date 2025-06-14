@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { kvApi } from '@/services/kvApi'
+import axios from 'axios'
 
 export const useGamesStore = defineStore('games', () => {
   const games = ref([])
