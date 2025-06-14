@@ -18,15 +18,7 @@
     "api/index.js": {
       "memory": 3008,
       "maxDuration": 60,
-      "includeFiles": [
-        "fetchGamesDataFunction-working.js",
-        "decode_url.js",
-        "fetchHtml.js",
-        "m3u8-proxy.js",
-        "scheduler.js",
-        "streamQueue.js",
-        "cacheManager.js"
-      ],
+      "includeFiles": "**/*.js",
       "runtime": "nodejs18.x"
     }
   },
