@@ -1,28 +1,23 @@
 {
   "version": 2,
-  "builds": [
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "framework": "vite",
+  "rewrites": [
     {
-      "src": "app.js",
-      "use": "@vercel/node",
-      "config": {
-        "includeFiles": ["aptfile"]
-      }
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/app.js"
+      "source": "/api/(.*)",
+      "destination": "/api"
     },
     {
-      "src": "/(.*)",
-      "dest": "/app.js"
+      "source": "/proxy/(.*)",
+      "destination": "/api"
     }
   ],
   "functions": {
-    "app.js": {
+    "api/index.js": {
       "memory": 3008,
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "**"
     }
   }
 }

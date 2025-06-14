@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直播播放器</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #000;
+            color: #fff;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #fff;
+        }
+        .player-container {
+            width: 100%;
+            max-width: 800px;
+            margin: 20px auto;
+            background: #111;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        video {
+            width: 100%;
+            height: auto;
+            display: block;
+        }
+        .controls {
+            padding: 20px;
+            background: #222;
+        }
+        .url-input {
+            width: 70%;
+            padding: 10px;
+            margin-right: 10px;
+            border: 1px solid #444;
+            border-radius: 4px;
+            background: #333;
+            color: #fff;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .status.success {
+            background: #28a745;
+        }
+        .status.error {
+            background: #dc3545;
+        }
+        .test-streams {
+            margin-top: 20px;
+        }
+        .test-stream {
+            display: block;
+            margin: 5px 0;
+            padding: 8px;
+            background: #333;
+            color: #fff;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 12px;
+            word-break: break-all;
+        }
+        .test-stream:hover {
+            background: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>HLS 直播播放器</h1>
+        
+        <div class="player-container">
+            <video id="video" controls></video>
+            
+            <div class="controls">
+                <input type="text" id="streamUrl" class="url-input" placeholder="输入 m3u8 流地址">
+                <button onclick="loadStream()" class="btn">播放</button>
+                <div id="status"></div>
+                
+                <div class="test-streams">
+                    <h3>测试流地址：</h3>
+                    <a href="#" class="test-stream" onclick="loadTestStream('https://v4-883f0cd13cae4b9414b1c6ed244aad5f.livehwc4.com/hdl7.szsummer.cn/live/17984472.m3u8?edge_slice=true&user_session_id=7c232a0c4d036f2e35b2cba4f9a45ae6&sub_m3u8=true&auth_key=1749744000-ddf9c5e90eba4cca8b4acf6a60c4d8b2-0-6b768444bbbb4e788243166e509ff231')">
+                        🎯 CDN直播流 (可用) - livehwc4.com
+                    </a>
+                    <a href="#" class="test-stream" onclick="testLatestStream()">
+                        实时获取最新流地址 (API + 代理)
+                    </a>
+                    <a href="#" class="test-stream" onclick="loadTestStream('http://localhost:3000/api/getIframeSrc?url=http%3A%2F%2Fplay.xndezx.com%2Fplay%2Fsm.html%3Fid%3D265%26id2%3D')">
+                        测试API: localhost:3000/api/getIframeSrc?url=...
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const video = document.getElementById('video');
+        const statusDiv = document.getElementById('status');
+        let hls;
+
+        function showStatus(message, type = 'info') {
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${type}`;
+        }
+
+        function loadStream() {
+            const url = document.getElementById('streamUrl').value.trim();
+            if (!url) {
+                showStatus('请输入流地址', 'error');
+                return;
+            }
+            
+            playStream(url);
+        }
+
+        function loadTestStream(url) {
+            document.getElementById('streamUrl').value = url;
+            
+            // 如果是API地址，先获取真实的流地址
+            if (url.includes('/api/getIframeSrc')) {
+                showStatus('正在获取流地址...', 'info');
+                fetch(url)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.url) {
+                            // 从嵌套的iframe中提取m3u8地址
+                            const m3u8Match = data.url.match(/id=([^&]+)/);
+                            if (m3u8Match) {
+                                let m3u8Url = decodeURIComponent(m3u8Match[1]);
+                                if (m3u8Url.startsWith('//')) {
+                                    m3u8Url = 'https:' + m3u8Url;
+                                }
+                                document.getElementById('streamUrl').value = m3u8Url;
+                                playStream(m3u8Url);
+                            } else {
+                                showStatus('无法解析流地址', 'error');
+                            }
+                        } else {
+                            showStatus('API返回错误: ' + (data.error || '未知错误'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showStatus('获取流地址失败: ' + error.message, 'error');
+                    });
+            } else {
+                playStream(url);
+            }
+        }
+
+        function playStream(url) {
+            showStatus('正在加载流...', 'info');
+            
+            // 清理之前的HLS实例
+            if (hls) {
+                hls.destroy();
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+                
+                hls.loadSource(url);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    showStatus('流加载成功，开始播放', 'success');
+                    video.play();
+                });
+                
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS错误:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                showStatus('网络错误，尝试恢复...', 'error');
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                showStatus('媒体错误，尝试恢复...', 'error');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                showStatus('无法恢复的错误: ' + data.details, 'error');
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+                
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari原生支持
+                video.src = url;
+                showStatus('使用原生HLS支持', 'success');
+            } else {
+                showStatus('浏览器不支持HLS播放', 'error');
+            }
+        }
+
+        function testLatestStream() {
+            showStatus('正在获取最新流地址...', 'info');
+            
+            // 使用getStreamUrl API获取最新的流地址
+            fetch('/api/getStreamUrl?url=' + encodeURIComponent('http://play.xndezx.com/play/sm.html?id=265&id2='))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.streamUrl) {
+                        console.log('获取到流地址:', data.streamUrl);
+                        // 使用代理播放
+                        const proxyUrl = '/proxy/m3u8?url=' + encodeURIComponent(data.streamUrl);
+                        document.getElementById('streamUrl').value = proxyUrl;
+                        playStream(proxyUrl);
+                    } else {
+                        showStatus('获取流地址失败: ' + (data.error || '未知错误'), 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatus('API请求失败: ' + error.message, 'error');
+                });
+        }
+
+        // 页面加载时的初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            // 检查URL参数
+            const urlParams = new URLSearchParams(window.location.search);
+            const liveUrl = urlParams.get('url');
+            
+            if (liveUrl) {
+                showStatus('正在获取流地址...', 'info');
+                // 使用 getStreamUrl API 获取流地址
+                fetch('/api/getStreamUrl?url=' + encodeURIComponent(liveUrl))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.streamUrl) {
+                            console.log('获取到流地址:', data.streamUrl);
+                            // 使用代理播放，避免CORS问题
+                            const proxyUrl = '/proxy/m3u8?url=' + encodeURIComponent(data.streamUrl);
+                            document.getElementById('streamUrl').value = proxyUrl;
+                            playStream(proxyUrl);
+                        } else {
+                            showStatus('获取流地址失败: ' + (data.error || '未知错误'), 'error');
+                        }
+                    })
+                    .catch(error => {
+                        showStatus('API请求失败: ' + error.message, 'error');
+                    });
+            } else {
+                showStatus('播放器已就绪，输入m3u8地址开始播放', 'info');
+            }
+        });
+    </script>
+</body>
+</html>

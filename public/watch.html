@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>体育直播 - 一键观看</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 600;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .filters {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 20px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .filter-btn:hover, .filter-btn.active {
+            background: #4CAF50;
+            border-color: #4CAF50;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .league-badge {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .game-time {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .teams {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .team img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-bottom: 8px;
+            object-fit: cover;
+        }
+
+        .team-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .vs {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stream-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-ready {
+            background: #4CAF50;
+        }
+
+        .status-unavailable {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .watch-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            text-decoration: none;
+            display: block;
+        }
+
+        .watch-btn.primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .watch-btn.primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .watch-btn.secondary {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .watch-btn.secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .watch-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 1000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 90%;
+            max-width: 800px;
+            background: #1a1a2e;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .modal-header {
+            padding: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            background: #000;
+        }
+
+        #modalVideo {
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 8px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        @media (max-width: 768px) {
+            .games-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filters {
+                justify-content: center;
+            }
+            
+            .modal-content {
+                width: 95%;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🏆 体育直播 - 一键观看</h1>
+    </div>
+
+    <div class="container">
+        <div class="stats" id="statsContainer">
+            <div class="stat">
+                <div class="stat-number" id="totalGames">-</div>
+                <div class="stat-label">总比赛</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="readyStreams">-</div>
+                <div class="stat-label">可观看</div>
+            </div>
+            <div class="stat">
+                <div class="stat-number" id="liveGames">-</div>
+                <div class="stat-label">进行中</div>
+            </div>
+        </div>
+
+        <div class="filters">
+            <button class="filter-btn active" data-filter="all">全部</button>
+            <button class="filter-btn" data-filter="ready">可观看</button>
+            <button class="filter-btn" data-filter="NBA">NBA/WNBA</button>
+            <button class="filter-btn" data-filter="中超">中超</button>
+            <button class="filter-btn" data-filter="欧">欧洲联赛</button>
+            <button class="filter-btn" data-filter="韩">亚洲联赛</button>
+        </div>
+
+        <div class="games-grid" id="gamesGrid">
+            <!-- 游戏卡片将在这里动态生成 -->
+        </div>
+    </div>
+
+    <!-- 视频播放模态框 -->
+    <div class="modal" id="videoModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">正在播放</h3>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="video-container">
+                <video id="modalVideo" controls></video>
+                <div class="loading" id="modalLoading">正在加载直播流...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let allGames = [];
+        let currentFilter = 'all';
+        let hls = null;
+
+        // 加载比赛数据
+        async function loadGames() {
+            try {
+                // 优先使用本地API
+                let response = await fetch('/api/games');
+                if (response.ok) {
+                    allGames = await response.json();
+                    console.log('从本地API加载比赛数据:', allGames.length, '场');
+                } else {
+                    // 备用：直接从KV获取
+                    console.log('本地API失败，尝试KV存储...');
+                    response = await fetch('https://dokv.pwtk.cc/kv/games/jrs/all');
+                    const text = await response.text();
+                    allGames = JSON.parse(text);
+                    console.log('从KV加载比赛数据:', allGames.length, '场');
+                }
+                
+                updateStats();
+                renderGames();
+            } catch (error) {
+                console.error('加载比赛数据失败:', error);
+                document.getElementById('gamesGrid').innerHTML = 
+                    '<div style="text-align: center; color: #f44336;">加载数据失败，请稍后重试</div>';
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const totalGames = allGames.length;
+            const readyStreams = allGames.filter(game => 
+                game.directStream && game.directStream.status === 'ready'
+            ).length;
+            const now = new Date();
+            const liveGames = allGames.filter(game => {
+                const gameTime = new Date(game.gameTime);
+                const timeDiff = Math.abs(now - gameTime) / (1000 * 60); // 分钟差
+                return timeDiff <= 120; // 2小时内的比赛认为是直播
+            }).length;
+
+            document.getElementById('totalGames').textContent = totalGames;
+            document.getElementById('readyStreams').textContent = readyStreams;
+            document.getElementById('liveGames').textContent = liveGames;
+        }
+
+        // 渲染比赛列表
+        function renderGames() {
+            const grid = document.getElementById('gamesGrid');
+            let filteredGames = allGames;
+
+            // 应用过滤器
+            if (currentFilter === 'ready') {
+                filteredGames = allGames.filter(game => 
+                    game.directStream && game.directStream.status === 'ready'
+                );
+            } else if (currentFilter !== 'all') {
+                filteredGames = allGames.filter(game => 
+                    game.league.includes(currentFilter)
+                );
+            }
+
+            // 按可观看状态排序
+            filteredGames.sort((a, b) => {
+                const aReady = a.directStream && a.directStream.status === 'ready' ? 1 : 0;
+                const bReady = b.directStream && b.directStream.status === 'ready' ? 1 : 0;
+                return bReady - aReady;
+            });
+
+            grid.innerHTML = filteredGames.map(game => createGameCard(game)).join('');
+        }
+
+        // 创建比赛卡片
+        function createGameCard(game) {
+            const hasStream = game.directStream && game.directStream.status === 'ready';
+            const statusClass = hasStream ? 'status-ready' : 'status-unavailable';
+            const statusText = hasStream ? '直播可用' : '暂无直播';
+
+            return `
+                <div class="game-card">
+                    <div class="game-header">
+                        <div class="league-badge">${game.league}</div>
+                        <div class="game-time">${game.gameTime}</div>
+                    </div>
+                    
+                    <div class="teams">
+                        <div class="team">
+                            <img src="${game.team1Logo}" alt="${game.team1}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0Q0FGNTASCZ8L2NpcmNsZT4KPHN2Zz4K'">
+                            <div class="team-name">${game.team1}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <img src="${game.team2Logo}" alt="${game.team2}" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHZpZXdCb3g9IjAgMCA0MCA0MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMjAiIGZpbGw9IiM0Q0FGNTASCZ8L2NpcmNsZT4KPHN2Zz4K'">
+                            <div class="team-name">${game.team2}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stream-status">
+                        <div class="status-indicator ${statusClass}"></div>
+                        <span>${statusText}</span>
+                    </div>
+                    
+                    <div class="actions">
+                        ${hasStream ? 
+                            `<button class="watch-btn primary" onclick="watchGame('${game.directStream.m3u8Url}', '${game.team1} vs ${game.team2}')">
+                                🎬 立即观看
+                            </button>` :
+                            `<button class="watch-btn secondary" disabled>
+                                ⏳ 暂无直播
+                            </button>`
+                        }
+                    </div>
+                </div>
+            `;
+        }
+
+        // 观看比赛
+        function watchGame(streamUrl, title) {
+            const modal = document.getElementById('videoModal');
+            const video = document.getElementById('modalVideo');
+            const loading = document.getElementById('modalLoading');
+            const modalTitle = document.getElementById('modalTitle');
+
+            modalTitle.textContent = title;
+            modal.style.display = 'block';
+            loading.style.display = 'block';
+
+            // 清理之前的HLS实例
+            if (hls) {
+                hls.destroy();
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: false,
+                    enableWorker: true,
+                    lowLatencyMode: true,
+                    backBufferLength: 90
+                });
+                
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    loading.style.display = 'none';
+                    video.play();
+                });
+                
+                hls.on(Hls.Events.ERROR, function(event, data) {
+                    console.error('HLS错误:', data);
+                    loading.textContent = '播放失败: ' + data.details;
+                    
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+                
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                video.src = streamUrl;
+                video.play();
+                loading.style.display = 'none';
+            } else {
+                loading.textContent = '浏览器不支持HLS播放';
+            }
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            const modal = document.getElementById('videoModal');
+            const video = document.getElementById('modalVideo');
+            
+            modal.style.display = 'none';
+            video.pause();
+            
+            if (hls) {
+                hls.destroy();
+                hls = null;
+            }
+        }
+
+        // 过滤器事件
+        document.addEventListener('click', (e) => {
+            if (e.target.classList.contains('filter-btn')) {
+                document.querySelectorAll('.filter-btn').forEach(btn => 
+                    btn.classList.remove('active')
+                );
+                e.target.classList.add('active');
+                currentFilter = e.target.dataset.filter;
+                renderGames();
+            }
+        });
+
+        // ESC键关闭模态框
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // 点击模态框外部关闭
+        document.getElementById('videoModal').addEventListener('click', (e) => {
+            if (e.target.id === 'videoModal') {
+                closeModal();
+            }
+        });
+
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', () => {
+            loadGames();
+            
+            // 每分钟刷新一次数据
+            setInterval(loadGames, 60000);
+        });
+    </script>
+</body>
+</html>

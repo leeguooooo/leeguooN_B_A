@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply scroll-smooth;
+  }
+  
+  body {
+    @apply bg-base-100 text-base-content;
+  }
+}
+
+@layer components {
+  /* 聚焦样式 - 适配遥控器操作 */
+  .focusable {
+    @apply transition-all duration-200 outline-none;
+  }
+  
+  .focusable:focus {
+    @apply ring-4 ring-primary ring-offset-2 ring-offset-base-100 scale-105;
+  }
+  
+  /* 卡片悬浮效果 */
+  .card-hover {
+    @apply transition-all duration-300 hover:shadow-xl hover:scale-102;
+  }
+  
+  /* 渐变背景 */
+  .gradient-primary {
+    @apply bg-gradient-to-r from-primary to-secondary;
+  }
+  
+  /* 毛玻璃效果 */
+  .glass {
+    @apply backdrop-blur-md bg-base-100/30;
+  }
+}
+
+@layer utilities {
+  /* 自定义滚动条 */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    @apply bg-base-200 rounded-full;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    @apply bg-base-300 rounded-full hover:bg-primary;
+  }
+  
+  /* TV模式下的特殊样式 */
+  @media (min-width: 1920px) {
+    .tv-text {
+      @apply text-2xl;
+    }
+    
+    .tv-padding {
+      @apply p-12;
+    }
+  }
+}

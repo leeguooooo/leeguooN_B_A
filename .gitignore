@@ -1,3 +1,62 @@
-.vercel
+# Dependencies
 node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+*.log
+
+# Production
+dist/
+dist-ssr/
+*.local
+
+# Editor directories and files
+.vscode/*
+\!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Environment files
 .env
+.env.local
+.env.production
+.env.*.local
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+server.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Vite
+.vite/
+
+# Build
+.build/
+
+# Claude
+.claude/
+
+# Test files
+test-*.js
+debug-*.html
+working-site-*.html
+
+# Swift/tvOS build
+.build/
+Package.resolved

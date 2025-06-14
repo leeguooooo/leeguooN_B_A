@@ -148,26 +148,11 @@ const app = createApp({
 
     const openLink = async url => {
       try {
-        const response = await fetch(
-          `/api/getIframeSrc?url=${encodeURIComponent(url)}`
-        );
-        if (response.ok) {
-          const data = await response.json();
-          if (data.url) {
-            const noRefererLink = document.createElement('a');
-            noRefererLink.href = data.url;
-            noRefererLink.rel = 'noreferrer';
-            noRefererLink.target = '_blank';
-            noRefererLink.click();
-          } else {
-            console.error('获取iframe地址失败：地址为空');
-          }
-        } else {
-          console.error('获取iframe地址失败:', response.statusText);
-        }
+        // 直接打开播放器页面，让播放器处理流地址和代理
+        window.open(`/player.html?url=${encodeURIComponent(url)}`, '_blank');
         showModal.value = false;
       } catch (error) {
-        console.error('获取iframe地址错误:', error.message);
+        console.error('打开播放器错误:', error.message);
       }
     };
 
@@ -327,25 +312,11 @@ const app = createApp({
       },
       openLink: async url => {
         try {
-          const response = await fetch(
-            `/api/getIframeSrc?url=${encodeURIComponent(url)}`
-          );
-          if (response.ok) {
-            const data = await response.json();
-            if (data.url) {
-              const noRefererLink = document.createElement('a');
-              noRefererLink.href = data.url;
-              noRefererLink.rel = 'noreferrer';
-              noRefererLink.click();
-            } else {
-              console.error('获取iframe地址失败：地址为空');
-            }
-          } else {
-            console.error('获取iframe地址失败:', response.statusText);
-          }
+          // 直接打开播放器页面，让播放器处理流地址和代理
+          window.open(`/player.html?url=${encodeURIComponent(url)}`, '_blank');
           showModal.value = false;
         } catch (error) {
-          console.error('获取iframe地址错误:', error.message);
+          console.error('打开播放器错误:', error.message);
         }
       },
     };

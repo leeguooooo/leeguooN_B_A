@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KV API 演示</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            font-family: 'Monaco', 'Menlo', monospace;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .api-section {
+            background: #2d2d2d;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #4CAF50;
+        }
+        .api-url {
+            background: #333;
+            padding: 15px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-family: monospace;
+            border: 1px solid #555;
+            position: relative;
+        }
+        .api-url code {
+            color: #4CAF50;
+        }
+        .copy-btn {
+            position: absolute;
+            right: 10px;
+            top: 10px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #45a049;
+        }
+        .test-btn {
+            background: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        .test-btn:hover {
+            background: #1976D2;
+        }
+        .result {
+            background: #1e1e1e;
+            border: 1px solid #333;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 10px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .result pre {
+            margin: 0;
+            color: #00ff00;
+            font-size: 12px;
+        }
+        .status {
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #4CAF50;
+            color: white;
+        }
+        .status.error {
+            background: #f44336;
+            color: white;
+        }
+        .status.loading {
+            background: #ff9800;
+            color: white;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        .stat-card {
+            background: #2d2d2d;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #444;
+        }
+        .stat-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .update-info {
+            background: #333;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 KV API 演示 - 体育数据接口</h1>
+        
+        <div class="api-section">
+            <h2>📡 直接KV API端点</h2>
+            <p>无需自己的服务器，直接使用KV作为API接口：</p>
+            
+            <div class="api-url">
+                <code>https://dokv.pwtk.cc/kv/games/jrs/all</code>
+                <button class="copy-btn" onclick="copyToClipboard('https://dokv.pwtk.cc/kv/games/jrs/all')">复制</button>
+            </div>
+            <button class="test-btn" onclick="testApi('games/jrs/all', '所有比赛')">测试所有比赛</button>
+            
+            <div class="api-url">
+                <code>https://dokv.pwtk.cc/kv/games/jrs/nba</code>
+                <button class="copy-btn" onclick="copyToClipboard('https://dokv.pwtk.cc/kv/games/jrs/nba')">复制</button>
+            </div>
+            <button class="test-btn" onclick="testApi('games/jrs/nba', 'NBA比赛')">测试NBA比赛</button>
+            
+            <div class="api-url">
+                <code>https://dokv.pwtk.cc/kv/games/jrs/streams</code>
+                <button class="copy-btn" onclick="copyToClipboard('https://dokv.pwtk.cc/kv/games/jrs/streams')">复制</button>
+            </div>
+            <button class="test-btn" onclick="testApi('games/jrs/streams', '流地址缓存')">测试流地址</button>
+            
+            <div id="apiStatus"></div>
+            <div id="apiResult"></div>
+        </div>
+
+        <div class="api-section">
+            <h2>📊 缓存状态</h2>
+            <button class="test-btn" onclick="updateStats()">刷新状态</button>
+            
+            <div class="stats" id="statsContainer">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalGames">-</div>
+                    <div>总比赛数</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="nbaGames">-</div>
+                    <div>NBA/WNBA</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="streamCount">-</div>
+                    <div>流地址缓存</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="cacheAge">-</div>
+                    <div>缓存年龄(分钟)</div>
+                </div>
+            </div>
+            
+            <div class="update-info" id="updateInfo">
+                点击"刷新状态"获取最新数据...
+            </div>
+        </div>
+
+        <div class="api-section">
+            <h2>⚡ 优势特点</h2>
+            <ul>
+                <li><strong>无服务器</strong> - 直接使用KV作为API，无需维护服务器</li>
+                <li><strong>低延迟</strong> - 5分钟缓存，快速响应</li>
+                <li><strong>自动更新</strong> - 后台定时更新，数据保持新鲜</li>
+                <li><strong>分类存储</strong> - 按联赛类型分别缓存，精准获取</li>
+                <li><strong>CORS支持</strong> - 前端可直接调用</li>
+                <li><strong>JSON格式</strong> - 标准化数据格式，易于使用</li>
+            </ul>
+        </div>
+
+        <div class="api-section">
+            <h2>💡 使用示例</h2>
+            <div class="api-url">
+                <pre><code>// JavaScript 获取所有比赛
+fetch('https://dokv.pwtk.cc/kv/games/jrs/all')
+  .then(response => response.text())
+  .then(data => {
+    const games = JSON.parse(data);
+    console.log('比赛数据:', games);
+  });</code></pre>
+            </div>
+            
+            <div class="api-url">
+                <pre><code>// curl 命令行测试
+curl "https://dokv.pwtk.cc/kv/games/jrs/nba"</code></pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showStatus('已复制到剪贴板', 'success');
+            });
+        }
+
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('apiStatus');
+            statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => statusDiv.innerHTML = '', 3000);
+        }
+
+        async function testApi(endpoint, name) {
+            const resultDiv = document.getElementById('apiResult');
+            const url = `https://dokv.pwtk.cc/kv/${endpoint}`;
+            
+            showStatus(`正在获取${name}数据...`, 'loading');
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                const text = await response.text();
+                let data;
+                
+                try {
+                    data = JSON.parse(text);
+                } catch (e) {
+                    data = text;
+                }
+                
+                const dataType = Array.isArray(data) ? `数组(${data.length}项)` : typeof data;
+                showStatus(`✅ ${name}获取成功 - ${dataType}`, 'success');
+                
+                resultDiv.innerHTML = `
+                    <h3>${name} - ${url}</h3>
+                    <div class="result">
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                showStatus(`❌ ${name}获取失败: ${error.message}`, 'error');
+                resultDiv.innerHTML = `
+                    <h3>错误 - ${name}</h3>
+                    <div class="result">
+                        <pre style="color: #ff6666;">${error.message}</pre>
+                    </div>
+                `;
+            }
+        }
+
+        async function updateStats() {
+            const endpoints = [
+                { key: 'games/jrs/all', id: 'totalGames' },
+                { key: 'games/jrs/nba', id: 'nbaGames' },
+                { key: 'games/jrs/streams', id: 'streamCount' },
+                { key: 'games/jrs/last_update', id: 'lastUpdate' }
+            ];
+
+            for (const endpoint of endpoints) {
+                try {
+                    const response = await fetch(`https://dokv.pwtk.cc/kv/${endpoint.key}`);
+                    const text = await response.text();
+                    
+                    if (endpoint.id === 'lastUpdate') {
+                        const timestamp = parseInt(text);
+                        const ageMinutes = Math.floor((Date.now() - timestamp) / 60000);
+                        document.getElementById('cacheAge').textContent = ageMinutes;
+                        
+                        const updateTime = new Date(timestamp).toLocaleString('zh-CN');
+                        document.getElementById('updateInfo').textContent = 
+                            `最后更新: ${updateTime} (${ageMinutes}分钟前)`;
+                    } else {
+                        let count = 0;
+                        try {
+                            const data = JSON.parse(text);
+                            if (Array.isArray(data)) {
+                                count = data.length;
+                            } else if (typeof data === 'object') {
+                                count = Object.keys(data).length;
+                            }
+                        } catch (e) {
+                            count = text.length > 0 ? 1 : 0;
+                        }
+                        document.getElementById(endpoint.id).textContent = count;
+                    }
+                } catch (error) {
+                    document.getElementById(endpoint.id).textContent = 'Error';
+                }
+            }
+        }
+
+        // 页面加载时自动更新统计
+        document.addEventListener('DOMContentLoaded', () => {
+            updateStats();
+        });
+    </script>
+</body>
+</html>
