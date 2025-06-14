@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "framework": "vite",
   "buildCommand": "./vercel-build.sh",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
