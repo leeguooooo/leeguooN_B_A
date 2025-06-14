@@ -41,9 +41,9 @@ export default defineConfig({
       output: {
         // 分离第三方库
         manualChunks: {
-          'vue-vendor': ['vue', 'vue-router'],
-          'ui-vendor': ['daisyui', '@heroicons/vue'],
-          'player-vendor': ['hls.js'],
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          // @heroicons/vue 会自动 tree shaking，不需要单独分包
+          // hls.js 会被动态导入，不需要预先分包
         },
         // 配置chunk文件名
         chunkFileNames: (chunkInfo) => {

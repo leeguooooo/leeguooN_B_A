@@ -133,7 +133,6 @@
 import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useGamesStore } from '../stores/games'
-import Hls from 'hls.js'
 import {
   ArrowLeftIcon,
   ArrowsPointingOutIcon,
@@ -246,6 +245,9 @@ async function initializePlayer() {
     // 使用代理地址
     const proxyUrl = `/proxy/m3u8?url=${encodeURIComponent(streamData.streamUrl)}`
     console.log('代理URL:', proxyUrl)
+    
+    // 动态导入 Hls.js
+    const { default: Hls } = await import('hls.js')
     
     if (Hls.isSupported()) {
       hls = new Hls({
