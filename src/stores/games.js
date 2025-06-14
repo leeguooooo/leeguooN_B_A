@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import axios from 'axios'
+import { kvApi } from '@/services/kvApi'
 
 export const useGamesStore = defineStore('games', () => {
   const games = ref([])
@@ -64,8 +64,8 @@ export const useGamesStore = defineStore('games', () => {
     error.value = null
     
     try {
-      const response = await axios.get('/api/games')
-      games.value = response.data
+      const data = await kvApi.getGames()
+      games.value = data
     } catch (err) {
       error.value = err.message
       console.error('Failed to fetch games:', err)

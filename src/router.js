@@ -1,8 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import Home from './views/Home.vue'
-import HomeV2 from './views/HomeV2.vue'
-import Player from './views/Player.vue'
-import IframePlayer from './views/IframePlayer.vue'
 
 const routes = [
   {
@@ -13,22 +9,22 @@ const routes = [
   {
     path: '/v1',
     name: 'HomeV1',
-    component: Home, // 保留旧版
+    component: () => import('./views/Home.vue'), // 懒加载
   },
   {
     path: '/v2',
     name: 'HomeV2',
-    component: HomeV2, // V2版本
+    component: () => import('./views/HomeV2.vue'), // 懒加载
   },
   {
     path: '/player',
     name: 'Player',
-    component: Player,
+    component: () => import('./views/Player.vue'), // 懒加载
   },
   {
     path: '/iframe-player',
     name: 'IframePlayer',
-    component: IframePlayer,
+    component: () => import('./views/IframePlayer.vue'), // 懒加载
   },
 ]
 
