@@ -11,6 +11,10 @@
     {
       "source": "/proxy/(.*)",
       "destination": "/api"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
     }
   ],
   "functions": {
@@ -22,6 +26,10 @@
     }
   },
   "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true"
+    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
+    "NODE_ENV": "production"
+  },
+  "github": {
+    "silent": true
   }
 }
