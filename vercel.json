@@ -1,6 +1,7 @@
 {
   "version": 2,
   "framework": "vite",
+  "buildCommand": "./vercel-build.sh",
   "rewrites": [
     {
       "source": "/api/(.*)",
