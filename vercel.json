@@ -1,8 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build && echo 'Build completed successfully!'",
-  "outputDirectory": "dist",
-  "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
     {
