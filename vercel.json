@@ -1,7 +1,8 @@
 {
   "version": 2,
-  "buildCommand": "npm install && npm run build",
+  "buildCommand": "npm install && npm run build && echo 'Build completed successfully!'",
   "outputDirectory": "dist",
+  "installCommand": "npm install",
   "framework": "vite",
   "rewrites": [
     {
@@ -11,25 +12,26 @@
     {
       "source": "/proxy/(.*)",
       "destination": "/api"
-    },
-    {
-      "source": "/(.*)",
-      "destination": "/$1"
     }
   ],
   "functions": {
     "api/index.js": {
       "memory": 3008,
       "maxDuration": 60,
-      "includeFiles": "**",
+      "includeFiles": [
+        "fetchGamesDataFunction-working.js",
+        "decode_url.js",
+        "fetchHtml.js",
+        "m3u8-proxy.js",
+        "scheduler.js",
+        "streamQueue.js",
+        "cacheManager.js"
+      ],
       "runtime": "nodejs18.x"
     }
   },
   "env": {
     "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
     "NODE_ENV": "production"
-  },
-  "github": {
-    "silent": true
   }
 }
