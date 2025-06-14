@@ -13,10 +13,10 @@ working-site-*.html
 .DS_Store
 
 # 忽略源文件（只需要构建后的文件）
-/src
-/public
+# /src  # 需要 src 目录来构建
+# /public  # 需要 public 目录
 *.md
-*.sh
+# *.sh  # 需要 vercel-build.sh
 
 # Swift/tvOS 相关
 Sources/
