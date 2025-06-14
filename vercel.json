@@ -16,10 +16,8 @@
   ],
   "functions": {
     "api/index.js": {
-      "memory": 3008,
-      "maxDuration": 60,
-      "includeFiles": "**/*.js",
-      "runtime": "nodejs18.x"
+      "memory": 1024,
+      "maxDuration": 10
     }
   },
   "env": {

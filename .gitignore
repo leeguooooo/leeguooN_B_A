@@ -60,3 +60,4 @@ working-site-*.html
 # Swift/tvOS build
 .build/
 Package.resolved
+.vercel
