@@ -1,25 +1,12 @@
 {
-  "version": 2,
-  "buildCommand": "pnpm run build",
-  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api"
     },
     {
-      "source": "/proxy/(.*)",
-      "destination": "/api"
+      "source": "/(.*)",
+      "destination": "/"
     }
-  ],
-  "functions": {
-    "api/index.js": {
-      "memory": 1024,
-      "maxDuration": 10
-    }
-  },
-  "env": {
-    "PUPPETEER_SKIP_CHROMIUM_DOWNLOAD": "true",
-    "NODE_ENV": "production"
-  }
+  ]
 }

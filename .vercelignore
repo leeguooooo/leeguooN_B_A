@@ -1,22 +1,18 @@
-# 忽略开发和测试文件
+# 基本忽略文件
 node_modules
 .env
 .env.local
 *.log
-test-*.js
-debug-*.html
-working-site-*.html
 .git
 .github
 .vscode
 .idea
 .DS_Store
 
-# 忽略源文件（只需要构建后的文件）
-# /src  # 需要 src 目录来构建
-# /public  # 需要 public 目录
-*.md
-# *.sh  # 需要 vercel-build.sh
+# 测试文件
+test-*.js
+debug-*.html
+working-site-*.html
 
 # Swift/tvOS 相关
 Sources/
@@ -27,3 +23,6 @@ Package.resolved
 # 开发工具
 .claude/
 CLAUDE.md
+
+# 保留构建所需的文件
+# 不要忽略 src, public, index.html, package.json, vite.config.mjs 等
