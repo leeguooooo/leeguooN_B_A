@@ -670,6 +670,8 @@ async function manualUpdateData() {
     // 获取当前的 Vercel URL
     const baseUrl = window.location.origin
     
+    console.log('触发更新:', `${baseUrl}/api/webhook/update`, 'API Key:', apiKey.substring(0, 10) + '...')
+    
     // 触发后端更新
     const response = await fetch(`${baseUrl}/api/webhook/update`, {
       method: 'POST',
@@ -688,13 +690,26 @@ async function manualUpdateData() {
       toastType.value = 'info'
       
       // 等待更长时间确保 KV 存储更新完成
-      await new Promise(resolve => setTimeout(resolve, 3000))
+      showToast.value = true
+      toastMessage.value = '等待数据同步...'
+      toastType.value = 'info'
+      await new Promise(resolve => setTimeout(resolve, 5000))
       
-      // 强制刷新页面数据，添加时间戳避免缓存
+      // 获取更新前的数据数量
+      const oldCount = gamesStore.games.length
+      
+      // 刷新页面数据
       await refreshGamesWithTimestamp()
       
+      // 获取更新后的数据数量
+      const newCount = gamesStore.games.length
+      
       showToast.value = true
-      toastMessage.value = '数据更新成功！'
+      if (oldCount !== newCount) {
+        toastMessage.value = `数据更新成功！(${oldCount} → ${newCount} 场比赛)`
+      } else {
+        toastMessage.value = `数据已是最新！(共 ${newCount} 场比赛)`
+      }
       toastType.value = 'success'
     } else {
       const error = await response.text()
@@ -711,29 +726,10 @@ async function manualUpdateData() {
 }
 
 async function refreshGamesWithTimestamp() {
-  // 直接从 API 获取最新数据，绕过 KV 缓存
-  try {
-    const response = await fetch(`${window.location.origin}/api/games?t=${Date.now()}`)
-    if (response.ok) {
-      const freshGames = await response.json()
-      // 直接更新 store 中的数据
-      gamesStore.games = freshGames
-      gamesStore.lastUpdateTime = Date.now()
-      dataUpdateTime.value = gamesStore.lastUpdateTime
-      checkDataFreshness()
-      console.log(`直接从 API 获取了 ${freshGames.length} 场比赛`)
-    } else {
-      // 如果直接 API 失败，回退到普通刷新
-      await gamesStore.fetchGames(true)
-      dataUpdateTime.value = gamesStore.lastUpdateTime
-      checkDataFreshness()
-    }
-  } catch (error) {
-    console.error('直接 API 调用失败，使用普通刷新:', error)
-    await gamesStore.fetchGames(true)
-    dataUpdateTime.value = gamesStore.lastUpdateTime
-    checkDataFreshness()
-  }
+  // 使用 KV API 获取最新数据
+  await gamesStore.fetchGames()
+  dataUpdateTime.value = gamesStore.lastUpdateTime
+  checkDataFreshness()
 }
 
 onMounted(() => {

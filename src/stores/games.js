@@ -89,7 +89,7 @@ export const useGamesStore = defineStore('games', () => {
     return new Date(chinaTime.getTime() - offsetDiff * 60 * 1000)
   }
   
-  async function fetchGames(forceRefresh = false) {
+  async function fetchGames() {
     loading.value = true
     error.value = null
     
@@ -105,10 +105,10 @@ export const useGamesStore = defineStore('games', () => {
         data = result.games || result
         updateTime = result.timestamp || Date.now()
       } else {
-        // 使用KV API，传递强制刷新标志
-        console.log('使用KV API获取数据...', forceRefresh ? '(强制刷新)' : '')
+        // 使用KV API
+        console.log('使用KV API获取数据...')
         const results = await Promise.all([
-          kvApi.getGames(forceRefresh),
+          kvApi.getGames(),
           kvApi.getLastUpdateTime()
         ])
         data = results[0]
