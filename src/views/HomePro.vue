@@ -105,7 +105,7 @@
             <div class="flex items-center gap-6">
               <div class="flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-red-500/30">
                 <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span class="text-sm sm:text-base text-red-400 font-medium">{{ gamesStore.liveGames.length }} 场直播中</span>
+                <span class="text-sm sm:text-base text-red-400 font-medium">{{ gamesWithLinks }} 场可观看</span>
               </div>
               
               <!-- Quick Stats -->
@@ -387,6 +387,22 @@ const filteredLiveGames = computed(() => {
 
 const filteredUpcomingGames = computed(() => {
   return filteredGames.value.filter(game => !isGameLive(game))
+})
+
+const gamesWithLinks = computed(() => {
+  return gamesStore.games.filter(game => game.liveLinks && game.liveLinks.length > 0).length
+})
+
+const totalGames = computed(() => gamesStore.games.length)
+
+const uniqueLeagues = computed(() => {
+  return new Set(gamesStore.games.map(game => game.league))
+})
+
+const totalLiveGames = computed(() => {
+  return gamesStore.games.reduce((total, game) => {
+    return total + (game.liveLinks ? game.liveLinks.length : 0)
+  }, 0)
 })
 
 function getLeagueCount(leagueId) {
