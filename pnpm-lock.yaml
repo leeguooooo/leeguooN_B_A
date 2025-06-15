@@ -53,6 +53,9 @@ importers:
       tailwindcss:
         specifier: ^3.4.3
         version: 3.4.17
+      terser:
+        specifier: ^5.42.0
+        version: 5.42.0
       vite:
         specifier: ^5.2.11
         version: 5.4.19(@types/node@22.13.5)(terser@5.42.0)
@@ -63,9 +66,6 @@ importers:
         specifier: ^4.3.2
         version: 4.5.1(vue@3.5.16)
     devDependencies:
-      terser:
-        specifier: ^5.42.0
-        version: 5.42.0
       vite-plugin-compression:
         specifier: ^0.5.1
         version: 0.5.1(vite@5.4.19(@types/node@22.13.5)(terser@5.42.0))

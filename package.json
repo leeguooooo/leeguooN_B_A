@@ -8,8 +8,13 @@
     "start": "node app.js",
     "dev": "vite",
     "build": "vite build",
+    "build:check": "vite build --mode production",
     "preview": "vite preview",
-    "fetchGamesData": "node fetchGamesData.js"
+    "fetchGamesData": "node fetchGamesData.js",
+    "precommit": "npm run build:check",
+    "predeploy": "npm run build:check && echo '✅ Build successful, ready to deploy!'",
+    "check": "node scripts/pre-deploy-check.js",
+    "check:all": "npm run check && npm run build:check"
   },
   "keywords": [],
   "author": "leeguoo",
