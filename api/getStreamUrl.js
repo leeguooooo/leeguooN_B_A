@@ -139,10 +139,42 @@ export default async function handler(req, res) {
     
   } catch (error) {
     console.error('[API] Error getting stream URL:', error.message);
-    return res.status(500).json({ 
+    
+    // 返回详细的错误信息
+    let statusCode = 500;
+    let errorResponse = {
       error: '获取流地址失败',
-      message: error.message 
-    });
+      message: error.message,
+      url: url,
+      timestamp: new Date().toISOString()
+    };
+    
+    // 特殊处理不同类型的错误
+    if (error.message.includes('403')) {
+      statusCode = 200;
+      errorResponse.errorCode = 403;
+      errorResponse.errorType = 'ACCESS_DENIED';
+      errorResponse.suggestion = '目标网站拒绝访问，可能需要更新请求头或使用代理';
+      errorResponse.streamUrl = null;
+    } else if (error.message.includes('404')) {
+      statusCode = 200;
+      errorResponse.errorCode = 404;
+      errorResponse.errorType = 'NOT_FOUND';
+      errorResponse.suggestion = '流地址页面不存在，可能已失效';
+      errorResponse.streamUrl = null;
+    } else if (error.message.includes('timeout')) {
+      statusCode = 200;
+      errorResponse.errorCode = 408;
+      errorResponse.errorType = 'TIMEOUT';
+      errorResponse.suggestion = '请求超时，目标服务器响应过慢';
+      errorResponse.streamUrl = null;
+    } else {
+      errorResponse.errorCode = 500;
+      errorResponse.errorType = 'INTERNAL_ERROR';
+      errorResponse.suggestion = '内部错误，请稍后重试';
+    }
+    
+    return res.status(statusCode).json(errorResponse);
   }
 }
 

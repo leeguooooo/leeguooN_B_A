@@ -143,11 +143,29 @@ export const useGamesStore = defineStore('games', () => {
         params: { url }
       })
       
+      // 检查是否有错误信息
+      if (response.data.errorCode) {
+        console.warn(`[API] ${response.data.errorType}: ${response.data.message}`)
+        console.warn(`[API] Suggestion: ${response.data.suggestion}`)
+        
+        // 对于 403 等错误，返回空数组而不是抛出异常
+        if (response.data.liveLinks !== undefined) {
+          return response.data.liveLinks
+        }
+      }
+      
       // TODO: 可以考虑将解析结果写入 KV 缓存
       
       return response.data
     } catch (err) {
       console.error('Failed to fetch live links:', err)
+      
+      // 如果是网络错误，返回空数组而不是抛出异常
+      if (err.response && err.response.status >= 400) {
+        console.warn('Network error, returning empty links')
+        return []
+      }
+      
       throw err
     }
   }

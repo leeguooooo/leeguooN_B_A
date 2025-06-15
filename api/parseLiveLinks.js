@@ -72,10 +72,42 @@ export default async function handler(req, res) {
     return res.status(200).json(liveLinks);
   } catch (error) {
     console.error('[API] Error parsing live links:', error.message);
-    return res.status(500).json({ 
+    
+    // 根据错误类型返回更详细的信息
+    let statusCode = 500;
+    let errorResponse = {
       error: 'Failed to parse live links',
-      message: error.message 
-    });
+      message: error.message,
+      url: url,
+      timestamp: new Date().toISOString()
+    };
+    
+    // 特殊处理 403 错误
+    if (error.message.includes('403')) {
+      statusCode = 200; // 返回 200 但标记错误
+      errorResponse.errorCode = 403;
+      errorResponse.errorType = 'ACCESS_DENIED';
+      errorResponse.suggestion = 'The target website is blocking our requests. This may be due to anti-bot protection.';
+      errorResponse.liveLinks = []; // 返回空数组而不是错误
+    } else if (error.message.includes('404')) {
+      statusCode = 200;
+      errorResponse.errorCode = 404;
+      errorResponse.errorType = 'NOT_FOUND';
+      errorResponse.suggestion = 'The requested game page was not found.';
+      errorResponse.liveLinks = [];
+    } else if (error.message.includes('timeout')) {
+      statusCode = 200;
+      errorResponse.errorCode = 408;
+      errorResponse.errorType = 'TIMEOUT';
+      errorResponse.suggestion = 'Request timed out. The target server may be slow or unreachable.';
+      errorResponse.liveLinks = [];
+    } else {
+      // 其他错误保持 500 状态码
+      errorResponse.errorCode = 500;
+      errorResponse.errorType = 'INTERNAL_ERROR';
+    }
+    
+    return res.status(statusCode).json(errorResponse);
   }
 }
 
