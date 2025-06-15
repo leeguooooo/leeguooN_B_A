@@ -4,16 +4,16 @@
     class="group relative bg-[#1a1a1a] rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl"
   >
     <!-- Live Badge -->
-    <div v-if="isLive" class="absolute top-4 left-4 z-10">
-      <div class="flex items-center space-x-2 bg-red-500 text-white text-xs font-bold px-3 py-1.5 rounded-full">
-        <span class="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+    <div v-if="isLive" class="absolute top-3 sm:top-4 left-3 sm:left-4 z-10">
+      <div class="flex items-center space-x-1.5 sm:space-x-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+        <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></span>
         <span>LIVE</span>
       </div>
     </div>
     
     <!-- League Badge -->
-    <div class="absolute top-4 right-4 z-10">
-      <div class="bg-black/60 backdrop-blur-sm text-white text-xs font-medium px-3 py-1.5 rounded-full">
+    <div class="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
+      <div class="bg-black/60 backdrop-blur-sm text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
         {{ game.league }}
       </div>
     </div>
@@ -31,12 +31,12 @@
     </div>
     
     <!-- Content -->
-    <div class="relative z-10 p-6 pt-20">
+    <div class="relative z-10 p-4 sm:p-6 pt-16 sm:pt-20">
       <!-- Teams -->
-      <div class="flex items-center justify-between mb-6">
+      <div class="flex items-center justify-between mb-4 sm:mb-6">
         <!-- Team 1 -->
         <div class="flex-1 text-center">
-          <div class="w-16 h-16 mx-auto mb-2 bg-white/10 backdrop-blur-sm rounded-full p-2">
+          <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-1.5 sm:mb-2 bg-white/10 backdrop-blur-sm rounded-full p-1.5 sm:p-2">
             <img 
               :src="game.team1Logo" 
               :alt="game.team1"
@@ -44,25 +44,30 @@
               @error="handleImageError"
             >
           </div>
-          <h3 class="text-white font-medium text-sm">{{ game.team1 }}</h3>
-          <div v-if="game.team1Score" class="text-2xl font-bold text-white mt-1">
+          <h3 class="text-white font-medium text-xs sm:text-sm truncate px-1">{{ game.team1 }}</h3>
+          <div v-if="game.team1Score" class="text-lg sm:text-2xl font-bold text-white mt-0.5 sm:mt-1">
             {{ game.team1Score }}
           </div>
         </div>
         
         <!-- VS / Time -->
-        <div class="px-4 text-center">
-          <div v-if="isLive" class="text-white/60 text-sm">
+        <div class="px-2 sm:px-4 text-center flex-shrink-0">
+          <div v-if="isLive" class="text-white/80 text-xs sm:text-sm font-medium">
             进行中
           </div>
-          <div v-else class="text-white/60 text-sm">
-            {{ game.gameTime.split(' ')[1] }}
+          <div v-else class="space-y-1">
+            <div class="text-white font-bold text-sm sm:text-base">
+              {{ formatTime(game.gameTime) }}
+            </div>
+            <div class="text-white/50 text-[10px] sm:text-xs">
+              {{ formatDate(game.gameTime) }}
+            </div>
           </div>
         </div>
         
         <!-- Team 2 -->
         <div class="flex-1 text-center">
-          <div class="w-16 h-16 mx-auto mb-2 bg-white/10 backdrop-blur-sm rounded-full p-2">
+          <div class="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-1.5 sm:mb-2 bg-white/10 backdrop-blur-sm rounded-full p-1.5 sm:p-2">
             <img 
               :src="game.team2Logo" 
               :alt="game.team2"
@@ -70,17 +75,17 @@
               @error="handleImageError"
             >
           </div>
-          <h3 class="text-white font-medium text-sm">{{ game.team2 }}</h3>
-          <div v-if="game.team2Score" class="text-2xl font-bold text-white mt-1">
+          <h3 class="text-white font-medium text-xs sm:text-sm truncate px-1">{{ game.team2 }}</h3>
+          <div v-if="game.team2Score" class="text-lg sm:text-2xl font-bold text-white mt-0.5 sm:mt-1">
             {{ game.team2Score }}
           </div>
         </div>
       </div>
       
-      <!-- Watch Button -->
-      <div class="opacity-0 group-hover:opacity-100 transition-opacity">
-        <button class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-3 rounded-xl transition flex items-center justify-center space-x-2">
-          <PlayIcon class="w-5 h-5" />
+      <!-- Watch Button (Mobile always visible) -->
+      <div class="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+        <button class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 sm:py-3 rounded-lg sm:rounded-xl transition flex items-center justify-center space-x-1.5 sm:space-x-2 text-sm sm:text-base">
+          <PlayIcon class="w-4 h-4 sm:w-5 sm:h-5" />
           <span>立即观看</span>
         </button>
       </div>
@@ -120,5 +125,34 @@ function getBackgroundImage(league) {
 
 function handleImageError(e) {
   e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjQiIGhlaWdodD0iNjQiIHZpZXdCb3g9IjAgMCA2NCA2NCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMzIiIGN5PSIzMiIgcj0iMzIiIGZpbGw9IiMzMzMzMzMiLz4KPHBhdGggZD0iTTMyIDIwQzI1LjM3MyAyMCAyMCAyNS4zNzMgMjAgMzJDMjAgMzguNjI3IDI1LjM3MyA0NCAzMiA0NEMzOC42MjcgNDQgNDQgMzguNjI3IDQ0IDMyQzQ0IDI1LjM3MyAzOC42MjcgMjAgMzIgMjBaIiBzdHJva2U9IndoaXRlIiBzdHJva2Utd2lkdGg9IjIiIGZpbGw9Im5vbmUiLz4KPC9zdmc+'
+}
+
+function formatTime(gameTime) {
+  const [date, time] = gameTime.split(' ')
+  return time
+}
+
+function formatDate(gameTime) {
+  const [date, time] = gameTime.split(' ')
+  const [month, day] = date.split('-')
+  
+  // 获取今天的日期
+  const today = new Date()
+  const todayMonth = (today.getMonth() + 1).toString().padStart(2, '0')
+  const todayDay = today.getDate().toString().padStart(2, '0')
+  
+  // 获取明天的日期
+  const tomorrow = new Date(today)
+  tomorrow.setDate(tomorrow.getDate() + 1)
+  const tomorrowMonth = (tomorrow.getMonth() + 1).toString().padStart(2, '0')
+  const tomorrowDay = tomorrow.getDate().toString().padStart(2, '0')
+  
+  if (month === todayMonth && day === todayDay) {
+    return '今天'
+  } else if (month === tomorrowMonth && day === tomorrowDay) {
+    return '明天'
+  } else {
+    return `${month}/${day}`
+  }
 }
 </script>

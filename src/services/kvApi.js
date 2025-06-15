@@ -23,6 +23,25 @@ export const kvApi = {
     }
   },
 
+  async getLastUpdateTime() {
+    try {
+      const response = await axios.get(`${KV_BASE_URL}/games/jrs/last_update`, {
+        headers: {
+          'Accept': 'application/json',
+        }
+      })
+      
+      if (response.data) {
+        return response.data
+      }
+      
+      return null
+    } catch (error) {
+      console.error('Failed to fetch last update time from KV:', error)
+      return null
+    }
+  },
+
   async getLiveLinks(url) {
     try {
       const encodedUrl = encodeURIComponent(url)

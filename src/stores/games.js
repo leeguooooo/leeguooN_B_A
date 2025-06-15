@@ -8,6 +8,7 @@ export const useGamesStore = defineStore('games', () => {
   const loading = ref(false)
   const error = ref(null)
   const selectedLeagues = ref(['NBA', '日职联'])
+  const lastUpdateTime = ref(null)
   
   const leagues = ref([
     { id: 'NBA', name: 'NBA', icon: '🏀' },
@@ -22,23 +23,41 @@ export const useGamesStore = defineStore('games', () => {
   ])
   
   const filteredGames = computed(() => {
+    console.log('Total games:', games.value.length)
+    console.log('Selected leagues:', selectedLeagues.value)
+    
     if (selectedLeagues.value.length === 0) {
       return games.value
     }
-    return games.value.filter(game => 
+    
+    const filtered = games.value.filter(game => 
       selectedLeagues.value.includes(game.league)
     )
+    
+    console.log('Filtered games:', filtered.length)
+    return filtered
   })
   
   const groupedGames = computed(() => {
     const grouped = {}
+    const today = new Date()
+    const todayStr = `${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+    
+    console.log('Today is:', todayStr)
+    
     filteredGames.value.forEach(game => {
       const date = game.gameTime.split(' ')[0]
-      if (!grouped[date]) {
-        grouped[date] = []
+      
+      // 只显示今天及以后的比赛
+      if (date >= todayStr) {
+        if (!grouped[date]) {
+          grouped[date] = []
+        }
+        grouped[date].push(game)
       }
-      grouped[date].push(game)
     })
+    
+    console.log('Grouped games dates:', Object.keys(grouped))
     return grouped
   })
   
@@ -75,8 +94,12 @@ export const useGamesStore = defineStore('games', () => {
     error.value = null
     
     try {
-      const data = await kvApi.getGames()
+      const [data, updateTime] = await Promise.all([
+        kvApi.getGames(),
+        kvApi.getLastUpdateTime()
+      ])
       games.value = data
+      lastUpdateTime.value = updateTime
     } catch (err) {
       error.value = err.message
       console.error('Failed to fetch games:', err)
@@ -148,6 +171,7 @@ export const useGamesStore = defineStore('games', () => {
     error,
     leagues,
     selectedLeagues,
+    lastUpdateTime,
     filteredGames,
     groupedGames,
     liveGames,

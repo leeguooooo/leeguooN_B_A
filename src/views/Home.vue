@@ -82,6 +82,13 @@
 
     <!-- Games List -->
     <div class="container mx-auto px-4 py-4">
+      <!-- 数据更新时间 -->
+      <div v-if="gamesStore.lastUpdateTime && !gamesStore.loading" class="text-center mb-4">
+        <p class="text-sm text-base-content/60">
+          数据更新时间: {{ formatUpdateTime(gamesStore.lastUpdateTime) }}
+        </p>
+      </div>
+      
       <div v-if="gamesStore.loading" class="flex justify-center py-20">
         <div class="loading loading-spinner loading-lg"></div>
       </div>
@@ -95,6 +102,7 @@
       
       <div v-else-if="Object.keys(gamesStore.groupedGames).length === 0" class="text-center py-20">
         <p class="text-xl text-base-content/60">暂无比赛数据</p>
+        <p class="text-sm text-base-content/40 mt-2">数据可能需要更新，请稍后再试</p>
       </div>
       
       <div v-else class="space-y-8">
@@ -370,6 +378,29 @@ function getWeekday(dateStr) {
   const [month, day] = dateStr.split('-')
   const date = new Date(new Date().getFullYear(), month - 1, day)
   return weekdays[date.getDay()]
+}
+
+function formatUpdateTime(timestamp) {
+  if (!timestamp) return '未知'
+  const date = new Date(timestamp)
+  const now = new Date()
+  const diffMs = now - date
+  const diffMins = Math.floor(diffMs / 60000)
+  const diffHours = Math.floor(diffMs / 3600000)
+  const diffDays = Math.floor(diffMs / 86400000)
+  
+  if (diffMins < 1) return '刚刚'
+  if (diffMins < 60) return `${diffMins}分钟前`
+  if (diffHours < 24) return `${diffHours}小时前`
+  if (diffDays < 7) return `${diffDays}天前`
+  
+  // 超过7天显示具体日期
+  return date.toLocaleString('zh-CN', {
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric'
+  })
 }
 
 onMounted(() => {

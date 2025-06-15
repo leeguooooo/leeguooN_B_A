@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.2/dist/full.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="p-4">
+        <h1 class="text-xl sm:text-2xl mb-4">响应式测试</h1>
+        
+        <div class="space-y-4">
+            <button class="btn btn-sm sm:btn-md btn-primary">
+                小屏按钮 (btn-sm) / 大屏按钮 (btn-md)
+            </button>
+            
+            <div class="badge badge-sm sm:badge-lg badge-primary">
+                小屏徽章 / 大屏徽章
+            </div>
+            
+            <p class="text-base sm:text-lg">
+                小屏文字 (text-base) / 大屏文字 (text-lg)
+            </p>
+            
+            <div class="p-3 sm:p-6 bg-gray-200">
+                小屏内边距 (p-3) / 大屏内边距 (p-6)
+            </div>
+        </div>
+        
+        <div class="mt-8">
+            <p>当前屏幕宽度: <span id="width"></span>px</p>
+            <p>sm 断点 (640px): <span id="sm-status"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        function updateSize() {
+            document.getElementById('width').textContent = window.innerWidth;
+            document.getElementById('sm-status').textContent = window.innerWidth >= 640 ? '是' : '否';
+        }
+        updateSize();
+        window.addEventListener('resize', updateSize);
+    </script>
+</body>
+</html>
