@@ -82,7 +82,7 @@ const response = await axios.get('https://dokv.pwtk.cc/kv/games/jrs/all');
 ### Vercel Dashboard 中设置：
 
 ```bash
-KV_AUTH_TOKEN=your_kv_auth_token     # KV 存储认证令牌
+KV_AUTH_TOKEN=your_kv_auth_token     # KV 存储认证令牌（重要！用于写入缓存）
 API_KEY=your_api_key                 # API 端点保护密钥
 ```
 
@@ -91,8 +91,12 @@ API_KEY=your_api_key                 # API 端点保护密钥
 ```bash
 VERCEL_APP_URL=https://your-app.vercel.app  # 你的 Vercel 应用 URL
 API_KEY=your_api_key                        # 与 Vercel 中相同的 API Key
-KV_BASE_URL=https://dokv.pwtk.cc/kv        # KV 存储基础 URL
 ```
+
+**注意**：
+- `KV_AUTH_TOKEN` 只需要在 Vercel 中设置，不需要在 GitHub 中设置
+- GitHub Actions 通过调用 Vercel API 来更新缓存，而不是直接写入 KV
+- 验证步骤直接读取公开的 KV 数据，不需要认证
 
 ## 缓存更新流程
 

@@ -22,6 +22,6 @@ jobs:
       - name: Verify cache update
         run: |
           sleep 5
-          curl ${{ secrets.KV_BASE_URL }}/games/jrs/last_update \
+          curl https://dokv.pwtk.cc/kv/games/jrs/last_update \
             -H "Accept: application/json" \
             --fail
