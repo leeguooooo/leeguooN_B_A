@@ -76,24 +76,49 @@
     <!-- Main Content -->
     <main class="pt-16">
       <!-- Hero Section -->
-      <section class="relative h-[250px] sm:h-[350px] md:h-[400px] overflow-hidden">
-        <div class="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent z-10"></div>
-        <img 
-          src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1920&h=400&fit=crop" 
-          alt="Hero"
-          class="absolute inset-0 w-full h-full object-cover"
-        >
+      <section class="relative h-[280px] sm:h-[380px] md:h-[450px] overflow-hidden">
+        <!-- Enhanced Background -->
+        <div class="absolute inset-0">
+          <img 
+            src="https://images.unsplash.com/photo-1546519638-68e109498ffc?w=1920&h=450&fit=crop&q=80" 
+            alt="Hero"
+            class="w-full h-full object-cover"
+          >
+          <div class="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/60 to-transparent"></div>
+          <div class="absolute inset-0 bg-gradient-to-r from-red-900/20 to-orange-900/20"></div>
+        </div>
+        
         <div class="relative z-20 container mx-auto px-3 sm:px-4 h-full flex items-center">
-          <div class="max-w-2xl">
-            <h1 class="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-3 sm:mb-4">
-              精彩赛事，<span class="text-red-500">即刻观看</span>
+          <div class="max-w-3xl">
+            <!-- Title with Gradient -->
+            <h1 class="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black text-white mb-4 tracking-tight">
+              <span class="bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">精彩赛事</span>
+              <span class="bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">·即刻观看</span>
             </h1>
-            <p class="text-base sm:text-lg md:text-xl text-white/80 mb-4 sm:mb-6 md:mb-8">
+            
+            <!-- Enhanced Subtitle -->
+            <p class="text-base sm:text-xl md:text-2xl text-white/90 mb-6 sm:mb-8 font-light leading-relaxed">
               覆盖全球顶级体育赛事，超高清直播体验
             </p>
-            <div class="flex items-center space-x-2">
-              <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></div>
-              <span class="text-sm sm:text-base text-white font-medium">{{ gamesStore.liveGames.length }} 场直播中</span>
+            
+            <!-- Live Indicator -->
+            <div class="flex items-center gap-6">
+              <div class="flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-red-500/30">
+                <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                <span class="text-sm sm:text-base text-red-400 font-medium">{{ gamesStore.liveGames.length }} 场直播中</span>
+              </div>
+              
+              <!-- Quick Stats -->
+              <div class="hidden sm:flex items-center gap-4 text-sm text-white/70">
+                <div class="flex items-center gap-1">
+                  <TvIcon class="w-4 h-4" />
+                  <span>{{ totalGames }} 场比赛</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <TrophyIcon class="w-4 h-4" />
+                  <span>{{ uniqueLeagues.size }} 个联赛</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -103,29 +128,32 @@
       <section class="bg-[#1a1a1a] border-b border-white/10 sticky top-14 sm:top-16 z-40">
         <div class="container mx-auto px-3 sm:px-4">
           <!-- Data Update Time -->
-          <div v-if="dataUpdateTime" class="flex items-center justify-center py-2 text-xs sm:text-sm text-white/60">
-            <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
-            <span>数据更新时间：{{ formatUpdateTime(dataUpdateTime) }}</span>
-            <span v-if="isDataStale" class="ml-2 text-yellow-500">(数据可能过期)</span>
-            <button 
-              v-if="isDataStale"
-              @click="manualUpdateData"
-              class="ml-3 px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 rounded-full text-xs transition-all flex items-center gap-1"
-              :disabled="updatingData"
-            >
-              <ArrowPathIcon class="w-3 h-3" :class="{ 'animate-spin': updatingData }" />
-              {{ updatingData ? '更新中...' : '立即更新' }}
-            </button>
+          <div v-if="dataUpdateTime" class="flex items-center justify-center py-3">
+            <div class="flex items-center gap-4 px-4 py-2 bg-white/5 backdrop-blur-sm rounded-full border border-white/10">
+              <div class="flex items-center text-xs sm:text-sm text-white/70">
+                <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1.5" />
+                <span>更新于 {{ formatUpdateTime(dataUpdateTime) }}</span>
+                <span v-if="isDataStale" class="ml-2 text-yellow-400 font-medium">(数据已过期)</span>
+              </div>
+              <button 
+                @click="manualUpdateData"
+                class="px-3 py-1 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white rounded-full text-xs font-medium transition-all flex items-center gap-1.5 shadow-lg shadow-red-500/20"
+                :disabled="updatingData"
+              >
+                <ArrowPathIcon class="w-3.5 h-3.5" :class="{ 'animate-spin': updatingData }" />
+                {{ updatingData ? '更新中' : '刷新数据' }}
+              </button>
+            </div>
           </div>
           <div class="flex items-center space-x-1 overflow-x-auto scrollbar-hide py-3 sm:py-4">
             <button
               v-for="league in allLeagues"
               :key="league.id"
               @click="selectedLeague = league.id"
-              class="px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all flex-shrink-0"
+              class="px-3 sm:px-6 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium whitespace-nowrap transition-all flex-shrink-0 border"
               :class="selectedLeague === league.id 
-                ? 'bg-red-500 text-white' 
-                : 'text-white/60 hover:text-white hover:bg-white/10'"
+                ? 'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-500 shadow-lg shadow-red-500/20' 
+                : 'text-white/60 hover:text-white hover:bg-white/10 border-white/10 hover:border-white/20'"
             >
               {{ league.name }}
               <span v-if="getLeagueCount(league.id)" class="ml-1 sm:ml-2 text-[10px] sm:text-xs opacity-80">
@@ -185,16 +213,38 @@
           <p class="text-white/40">请选择其他分类或稍后再来</p>
         </div>
 
-        <!-- Loading -->
-        <div v-if="gamesStore.loading" class="flex justify-center py-20">
-          <div class="flex space-x-2">
-            <div class="w-3 h-3 bg-red-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-            <div class="w-3 h-3 bg-red-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-            <div class="w-3 h-3 bg-red-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+        <!-- Enhanced Loading -->
+        <div v-if="gamesStore.loading" class="flex flex-col items-center justify-center py-20">
+          <div class="relative">
+            <!-- Spinning ring -->
+            <div class="w-16 h-16 border-4 border-white/10 rounded-full"></div>
+            <div class="absolute inset-0 w-16 h-16 border-4 border-red-500 rounded-full border-t-transparent animate-spin"></div>
+            
+            <!-- Center icon -->
+            <div class="absolute inset-0 flex items-center justify-center">
+              <TvIcon class="w-8 h-8 text-red-500" />
+            </div>
           </div>
+          <p class="mt-4 text-white/60 text-sm animate-pulse">加载赛事数据中...</p>
         </div>
       </section>
     </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gradient-to-t from-black to-[#0a0a0a] border-t border-white/10 mt-16">
+      <div class="container mx-auto px-4 py-8">
+        <div class="text-center">
+          <p class="text-white/40 text-sm">
+            © 2024 体育赛事直播中心 · 
+            <a href="#" class="hover:text-white/60 transition-colors">使用条款</a> · 
+            <a href="#" class="hover:text-white/60 transition-colors">隐私政策</a>
+          </p>
+          <p class="text-white/30 text-xs mt-2">
+            本站仅提供赛事信息聚合服务，不提供直播内容
+          </p>
+        </div>
+      </div>
+    </footer>
 
     <!-- Quick Access Modal -->
     <Teleport to="body">
@@ -297,7 +347,9 @@ import {
   ArrowTopRightOnSquareIcon,
   ShareIcon,
   ClockIcon,
-  CogIcon
+  CogIcon,
+  TrophyIcon,
+  PlayIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()

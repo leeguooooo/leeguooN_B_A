@@ -1,11 +1,11 @@
 <template>
   <div 
     @click="$emit('click')"
-    class="group relative bg-[#1a1a1a] rounded-2xl overflow-hidden cursor-pointer transition-all hover:scale-[1.02] hover:shadow-2xl"
+    class="group relative bg-gradient-to-br from-[#1a1a1a] to-[#0f0f0f] rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:shadow-2xl hover:shadow-red-500/10 border border-white/5 hover:border-red-500/30"
   >
     <!-- Live Badge -->
     <div v-if="isLive" class="absolute top-3 sm:top-4 left-3 sm:left-4 z-10">
-      <div class="flex items-center space-x-1.5 sm:space-x-2 bg-red-500 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+      <div class="flex items-center space-x-1.5 sm:space-x-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-[10px] sm:text-xs font-bold px-2 sm:px-3 py-1 sm:py-1.5 rounded-full shadow-lg shadow-red-500/50">
         <span class="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-white rounded-full animate-pulse"></span>
         <span>LIVE</span>
       </div>
@@ -13,7 +13,7 @@
     
     <!-- League Badge -->
     <div class="absolute top-3 sm:top-4 right-3 sm:right-4 z-10">
-      <div class="bg-black/60 backdrop-blur-sm text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-full">
+      <div class="bg-black/60 backdrop-blur-md text-white text-[10px] sm:text-xs font-medium px-2 sm:px-3 py-1 sm:py-1.5 rounded-full border border-white/20">
         {{ game.league }}
       </div>
     </div>
@@ -82,11 +82,14 @@
         </div>
       </div>
       
-      <!-- Watch Button (Mobile always visible) -->
-      <div class="sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-        <button class="w-full bg-red-500 hover:bg-red-600 text-white font-medium py-2 sm:py-3 rounded-lg sm:rounded-xl transition flex items-center justify-center space-x-1.5 sm:space-x-2 text-sm sm:text-base">
+      <!-- Watch Button with Stream Count -->
+      <div class="sm:opacity-0 sm:group-hover:opacity-100 transition-all duration-300">
+        <button class="w-full bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white font-medium py-2 sm:py-3 rounded-lg sm:rounded-xl transition-all flex items-center justify-center space-x-1.5 sm:space-x-2 text-sm sm:text-base shadow-lg shadow-red-500/30">
           <PlayIcon class="w-4 h-4 sm:w-5 sm:h-5" />
           <span>立即观看</span>
+          <span v-if="game.liveLinks && game.liveLinks.length > 0" class="ml-2 bg-white/20 px-2 py-0.5 rounded-full text-xs">
+            {{ game.liveLinks.length }} 源
+          </span>
         </button>
       </div>
     </div>
