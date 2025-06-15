@@ -135,7 +135,7 @@ export const useGamesStore = defineStore('games', () => {
     }
   }
   
-  async function fetchLiveLinks(url) {
+  async function fetchLiveLinks(url, source) {
     try {
       // 先尝试从 KV 缓存获取
       console.log('尝试从 KV 缓存获取直播链接...')
@@ -149,7 +149,7 @@ export const useGamesStore = defineStore('games', () => {
       // 如果缓存没有，则实时解析
       console.log('KV 缓存未命中，实时解析直播链接...')
       const response = await axios.get('/api/parseLiveLinks', {
-        params: { url }
+        params: { url, source: source || '' }
       })
       
       // 检查是否有错误信息
@@ -179,7 +179,7 @@ export const useGamesStore = defineStore('games', () => {
     }
   }
   
-  async function getStreamUrl(url) {
+  async function getStreamUrl(url, source) {
     try {
       // 先尝试从 KV 缓存获取
       console.log('尝试从 KV 缓存获取流地址...')
@@ -193,7 +193,7 @@ export const useGamesStore = defineStore('games', () => {
       // 如果缓存没有，则实时解析
       console.log('KV 缓存未命中，实时解析流地址...')
       const response = await axios.get('/api/getStreamUrl', {
-        params: { url }
+        params: { url, source: source || '' }
       })
       
       // 验证返回的数据

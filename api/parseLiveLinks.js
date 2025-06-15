@@ -1,16 +1,15 @@
 // 解析直播链接 API
 const cheerio = require('cheerio');
 
-async function fetchHtml(url) {
+async function fetchHtml(url, source) {
   try {
-    // 根据 URL 判断来源网站，设置对应的 Referer
-    let referer = 'https://www.jrs16.com/';
-    if (url.includes('sportsteam586.com')) {
-      referer = 'https://www.jrs16.com/';
-    } else if (url.includes('sportsteam53.com')) {
-      referer = 'https://www.jrs03.com/';
-    } else if (url.includes('xndezx.com')) {
-      referer = 'https://m.jrs03.com/';
+    // 如果传入了 source，使用它作为 referer
+    // 否则根据 URL 判断来源网站
+    let referer = source || 'https://www.jrs16.com/';
+    
+    // 确保 referer 是完整的 URL
+    if (referer && !referer.startsWith('http')) {
+      referer = 'https://' + referer;
     }
     
     const response = await fetch(url, {
@@ -56,6 +55,8 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: 'Missing URL parameter' });
   }
 
+  // 获取源网站参数
+  const source = req.query.source || '';
   const host = url.split('/').slice(0, 3).join('/');
 
   try {
@@ -67,7 +68,7 @@ export default async function handler(req, res) {
     
     try {
       // 方法1：直接获取
-      $ = await fetchHtml(url);
+      $ = await fetchHtml(url, source);
     } catch (directError) {
       console.log('[API] Direct fetch failed:', directError.message);
       

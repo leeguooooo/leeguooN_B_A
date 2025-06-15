@@ -11,6 +11,9 @@ export default async function handler(req, res) {
     return res.status(400).json({ error: '缺少URL参数' });
   }
 
+  // 获取源网站参数
+  const source = req.query.source || '';
+
   try {
     console.log('[API] Getting stream URL from:', url);
     
@@ -49,14 +52,12 @@ export default async function handler(req, res) {
       
       // 请求iframe页面获取m3u8地址
       try {
-        // 根据原始 URL 判断来源网站
-        let referer = 'https://www.jrs16.com/';
-        if (url.includes('sportsteam586.com')) {
-          referer = 'https://www.jrs16.com/';
-        } else if (url.includes('sportsteam53.com')) {
-          referer = 'https://www.jrs03.com/';
-        } else if (url.includes('xndezx.com')) {
-          referer = 'https://m.jrs03.com/';
+        // 使用传入的 source 作为 referer
+        let referer = source || 'https://www.jrs16.com/';
+        
+        // 确保 referer 是完整的 URL
+        if (referer && !referer.startsWith('http')) {
+          referer = 'https://' + referer;
         }
         
         const iframeResponse = await fetch(fullIframeUrl, {

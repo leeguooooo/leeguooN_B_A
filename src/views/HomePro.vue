@@ -501,7 +501,7 @@ async function selectGame(game) {
       showLinkModal.value = true
       
       try {
-        const links = await gamesStore.fetchLiveLinks(defaultLink.url)
+        const links = await gamesStore.fetchLiveLinks(defaultLink.url, game.source)
         
         // 排序
         const sortedLinks = links.sort((a, b) => {
