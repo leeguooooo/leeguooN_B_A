@@ -1,5 +1,4 @@
 // 获取最终流地址 API
-const axios = require('axios');
 const getFullIframeSrc = require('../decode_url.js');
 
 export default async function handler(req, res) {
@@ -50,16 +49,21 @@ export default async function handler(req, res) {
       
       // 请求iframe页面获取m3u8地址
       try {
-        const iframeResponse = await axios.get(fullIframeUrl, {
+        const iframeResponse = await fetch(fullIframeUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
             'Referer': url
-          },
-          timeout: 10000
+          }
         });
         
+        if (!iframeResponse.ok) {
+          throw new Error(`HTTP error! status: ${iframeResponse.status}`);
+        }
+        
+        const iframeHtml = await iframeResponse.text();
+        
         // 从响应中提取m3u8地址
-        const m3u8Match = iframeResponse.data.match(/(?:source|src|url|m3u8)['"]?\s*[:=]\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i);
+        const m3u8Match = iframeHtml.match(/(?:source|src|url|m3u8)['"]?\s*[:=]\s*['"]([^'"]+\.m3u8[^'"]*)['"]/i);
         if (m3u8Match) {
           let m3u8Url = m3u8Match[1];
           if (m3u8Url.startsWith('//')) {

@@ -44,8 +44,13 @@ export const kvApi = {
 
   async getLiveLinks(url) {
     try {
-      const encodedUrl = encodeURIComponent(url)
-      const response = await axios.get(`${KV_BASE_URL}/live_links_${encodedUrl}`, {
+      // 生成简单的 key，避免编码问题
+      // 从 URL 中提取关键部分作为 key
+      const urlMatch = url.match(/steam(\d+)\.html/);
+      const streamId = urlMatch ? urlMatch[1] : url.split('/').pop();
+      const kvKey = `livelinks_${streamId}`;
+      
+      const response = await axios.get(`${KV_BASE_URL}/${kvKey}`, {
         headers: {
           'Accept': 'application/json',
         }
@@ -64,8 +69,12 @@ export const kvApi = {
 
   async getStreamUrl(url) {
     try {
-      const encodedUrl = encodeURIComponent(url)
-      const response = await axios.get(`${KV_BASE_URL}/stream_url_${encodedUrl}`, {
+      // 生成简单的 key，避免编码问题
+      const urlMatch = url.match(/steam(\d+)\.html/);
+      const streamId = urlMatch ? urlMatch[1] : url.split('/').pop();
+      const kvKey = `stream_${streamId}`;
+      
+      const response = await axios.get(`${KV_BASE_URL}/${kvKey}`, {
         headers: {
           'Accept': 'application/json',
         }
