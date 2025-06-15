@@ -10,23 +10,81 @@ jobs:
   update-cache:
     runs-on: ubuntu-latest
     steps:
-      - name: Trigger cache update
+      - name: Environment check
         run: |
-          echo "Triggering cache update..."
+          echo "🔍 Checking environment variables..."
           if [ -z "${{ secrets.VERCEL_APP_URL }}" ]; then
-            echo "Error: VERCEL_APP_URL secret is not set"
+            echo "❌ Error: VERCEL_APP_URL secret is not set"
             exit 1
           fi
-          curl -X POST "${{ secrets.VERCEL_APP_URL }}/api/webhook/update" \
+          if [ -z "${{ secrets.API_KEY }}" ]; then
+            echo "❌ Error: API_KEY secret is not set"
+            exit 1
+          fi
+          echo "✅ All required secrets are configured"
+          echo "📍 Target URL: ${{ secrets.VERCEL_APP_URL }}"
+          
+      - name: Trigger cache update
+        id: update_cache
+        run: |
+          echo "🚀 Triggering cache update..."
+          echo "📅 Timestamp: $(date -u +"%Y-%m-%d %H:%M:%S UTC")"
+          
+          response=$(curl -X POST "${{ secrets.VERCEL_APP_URL }}/api/webhook/update" \
             -H "X-Api-Key: ${{ secrets.API_KEY }}" \
             -H "Content-Type: application/json" \
-            --fail \
+            --fail-with-body \
             --retry 3 \
-            --retry-delay 5
+            --retry-delay 5 \
+            -w "\nHTTP_CODE:%{http_code}\nTIME_TOTAL:%{time_total}s" \
+            -s)
+          
+          http_code=$(echo "$response" | grep "HTTP_CODE:" | cut -d: -f2)
+          time_total=$(echo "$response" | grep "TIME_TOTAL:" | cut -d: -f2)
+          body=$(echo "$response" | sed '/HTTP_CODE:/d' | sed '/TIME_TOTAL:/d')
+          
+          echo "📊 Response body: $body"
+          echo "📈 HTTP status: $http_code"
+          echo "⏱️  Request time: $time_total"
+          
+          if [ "$http_code" != "200" ]; then
+            echo "❌ Cache update failed with status code: $http_code"
+            exit 1
+          fi
+          
+          # Extract games count from response
+          games_count=$(echo "$body" | jq -r '.gamesCount // 0')
+          echo "🎮 Games updated: $games_count"
+          
+          if [ "$games_count" -eq 0 ]; then
+            echo "⚠️  Warning: No games were fetched"
+          fi
       
-      - name: Verify cache update
+      - name: Test API endpoint
+        if: success()
         run: |
+          echo "🧪 Testing API endpoint..."
           sleep 5
-          curl https://dokv.pwtk.cc/kv/games/jrs/last_update \
-            -H "Accept: application/json" \
-            --fail
+          
+          api_response=$(curl -s -w "\nHTTP_CODE:%{http_code}" \
+            "${{ secrets.VERCEL_APP_URL }}/api/games" \
+            -H "Accept: application/json")
+          
+          http_code=$(echo "$api_response" | grep "HTTP_CODE:" | cut -d: -f2)
+          
+          if [ "$http_code" = "200" ]; then
+            games_count=$(echo "$api_response" | sed '/HTTP_CODE:/d' | jq 'length')
+            echo "✅ API is working, found $games_count games"
+          else
+            echo "❌ API returned error: HTTP $http_code"
+            echo "Response: $(echo "$api_response" | sed '/HTTP_CODE:/d')"
+          fi
+          
+      - name: Summary
+        if: always()
+        run: |
+          echo "📝 Update Summary"
+          echo "=================="
+          echo "Workflow: ${{ job.status }}"
+          echo "Run ID: ${{ github.run_id }}"
+          echo "Run Number: ${{ github.run_number }}"
