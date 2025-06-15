@@ -137,25 +137,229 @@ app.get('/api/parseLiveLinks', async (req, res) => {
     return;
   }
 
+  const source = req.query.source || '';
   const host = url.split('/').slice(0, 3).join('/');
 
   try {
-    const $ = await fetchHtml(url);
+    // 使用fetch而不是axios，增强伪装
+    const userAgents = [
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+      'Mozilla/5.0 (Linux; Android 13; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36'
+    ];
+    
+    const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
+    
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': randomUA,
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'Accept-Language': 'zh-CN,zh;q=0.9',
+        'Cache-Control': 'no-cache',
+        'Referer': source || host,
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1'
+      }
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const html = await response.text();
+    const $ = cheerio.load(html);
     const subChannels = $('.sub_channel a.item');
     const liveLinks = [];
 
     subChannels.each((i, el) => {
       const subChannel = $(el);
-      const name = subChannel.text();
+      const name = subChannel.text().trim();
       const urlPath = subChannel.attr('data-play');
-      const url = `${host}${urlPath}`;
-      liveLinks.push({ name, url });
+      
+      if (name && urlPath) {
+        const fullUrl = urlPath.startsWith('http') ? urlPath : `${host}${urlPath}`;
+        liveLinks.push({ name, url: fullUrl });
+      }
     });
 
+    console.log(`[API] Found ${liveLinks.length} live links`);
     res.json(liveLinks);
   } catch (error) {
     console.error('Error fetching live links:', error.message);
-    res.status(500).json({ error: 'Failed to fetch live links' });
+    
+    // 返回更友好的错误信息
+    if (error.message.includes('403')) {
+      res.status(200).json({
+        errorCode: 403,
+        errorType: 'ACCESS_DENIED',
+        message: error.message,
+        liveLinks: []
+      });
+    } else {
+      res.status(500).json({ error: 'Failed to fetch live links' });
+    }
+  }
+});
+
+// Test endpoint for Puppeteer version
+app.get('/api/parseLiveLinks-puppeteer', async (req, res) => {
+  const url = req.query.url;
+  if (!url) {
+    res.status(400).json({ error: 'Missing URL parameter' });
+    return;
+  }
+
+  const source = req.query.source || '';
+  const puppeteer = require('puppeteer');
+  
+  let browser;
+  try {
+    console.log('[Puppeteer] Starting browser...');
+    const options = {
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
+      headless: true
+    };
+
+    browser = await puppeteer.launch(options);
+    console.log('[Puppeteer] Browser launched');
+    
+    const page = await browser.newPage();
+    console.log('[Puppeteer] New page created');
+
+    // 设置超时
+    page.setDefaultTimeout(30000);
+    page.setDefaultNavigationTimeout(30000);
+
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    
+    await page.setExtraHTTPHeaders({
+      'Accept-Language': 'zh-CN,zh;q=0.9',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      'Referer': source || url
+    });
+
+    console.log('[Puppeteer] Headers set, navigating to:', url);
+    
+    // 添加页面事件监听
+    page.on('error', err => {
+      console.error('[Puppeteer] Page error:', err.message);
+    });
+    
+    page.on('pageerror', err => {
+      console.error('[Puppeteer] Page JS error:', err.message);
+    });
+    
+    page.on('response', response => {
+      if (response.url() === url) {
+        console.log(`[Puppeteer] Response status for ${url}: ${response.status()}`);
+      }
+    });
+    
+    try {
+      await page.goto(url, {
+        waitUntil: 'domcontentloaded',
+        timeout: 15000
+      });
+      console.log('[Puppeteer] Page loaded');
+    } catch (navError) {
+      console.error('[Puppeteer] Navigation error:', navError.message);
+      // 尝试获取已加载的内容
+      const currentUrl = page.url();
+      console.log('[Puppeteer] Current URL:', currentUrl);
+      // 不要因为导航超时而失败，继续处理
+    }
+
+    // 等待一下让页面完全加载
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    // 尝试等待目标元素
+    try {
+      await page.waitForSelector('.sub_channel', { timeout: 5000 });
+      console.log('[Puppeteer] Found .sub_channel');
+    } catch (e) {
+      console.log('[Puppeteer] .sub_channel not found, checking page content...');
+      // 获取页面标题和部分HTML以调试
+      const title = await page.title();
+      console.log('[Puppeteer] Page title:', title);
+      
+      const bodyHTML = await page.evaluate(() => {
+        return document.body ? document.body.innerHTML.substring(0, 500) : 'No body';
+      });
+      console.log('[Puppeteer] Body HTML preview:', bodyHTML);
+    }
+
+    const content = await page.content();
+    console.log('[Puppeteer] Got page content, length:', content.length);
+    
+    await browser.close();
+    console.log('[Puppeteer] Browser closed');
+    
+    // Parse the content
+    const $ = cheerio.load(content);
+    const host = url.split('/').slice(0, 3).join('/');
+    
+    // 尝试多种选择器
+    let liveLinks = [];
+    
+    // 方法1: 原始选择器
+    const subChannels = $('.sub_channel a.item');
+    console.log('[Puppeteer] Found elements with .sub_channel a.item:', subChannels.length);
+    
+    if (subChannels.length > 0) {
+      subChannels.each((i, el) => {
+        const subChannel = $(el);
+        const name = subChannel.text().trim();
+        const urlPath = subChannel.attr('data-play');
+        
+        if (name && urlPath) {
+          const fullUrl = urlPath.startsWith('http') ? urlPath : `${host}${urlPath}`;
+          liveLinks.push({ name, url: fullUrl });
+        }
+      });
+    } else {
+      // 方法2: 尝试其他可能的选择器
+      const alternativeSelectors = [
+        'a.item[data-play]',
+        '.channel a[data-play]',
+        'a[data-play]'
+      ];
+      
+      for (const selector of alternativeSelectors) {
+        const elements = $(selector);
+        console.log(`[Puppeteer] Trying selector "${selector}":`, elements.length);
+        if (elements.length > 0) {
+          elements.each((i, el) => {
+            const element = $(el);
+            const name = element.text().trim();
+            const urlPath = element.attr('data-play');
+            
+            if (name && urlPath) {
+              const fullUrl = urlPath.startsWith('http') ? urlPath : `${host}${urlPath}`;
+              liveLinks.push({ name, url: fullUrl });
+            }
+          });
+          break;
+        }
+      }
+    }
+
+    console.log(`[Puppeteer] Found ${liveLinks.length} live links`);
+    res.json(liveLinks);
+    
+  } catch (error) {
+    if (browser) {
+      await browser.close();
+    }
+    console.error('[Puppeteer] Error:', error.message);
+    console.error('[Puppeteer] Stack:', error.stack);
+    res.status(500).json({ 
+      error: 'Failed to parse live links with Puppeteer',
+      message: error.message 
+    });
   }
 });
 

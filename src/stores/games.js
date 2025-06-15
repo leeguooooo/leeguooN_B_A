@@ -148,7 +148,7 @@ export const useGamesStore = defineStore('games', () => {
       
       // 如果缓存没有，则实时解析
       console.log('KV 缓存未命中，实时解析直播链接...')
-      const response = await axios.get('/api/parseLiveLinks', {
+      let response = await axios.get('/api/parseLiveLinks', {
         params: { url, source: source || '' }
       })
       
@@ -156,6 +156,19 @@ export const useGamesStore = defineStore('games', () => {
       if (response.data.errorCode) {
         console.warn(`[API] ${response.data.errorType}: ${response.data.message}`)
         console.warn(`[API] Suggestion: ${response.data.suggestion}`)
+        
+        // 如果是 403 错误，尝试使用 Puppeteer 版本
+        if (response.data.errorCode === 403) {
+          console.log('检测到 403 错误，尝试使用 Puppeteer 版本...')
+          try {
+            const puppeteerResponse = await axios.get('/api/parseLiveLinks-puppeteer', {
+              params: { url, source: source || '' }
+            })
+            return puppeteerResponse.data
+          } catch (puppeteerError) {
+            console.error('Puppeteer 版本也失败:', puppeteerError)
+          }
+        }
         
         // 对于 403 等错误，返回空数组而不是抛出异常
         if (response.data.liveLinks !== undefined) {
