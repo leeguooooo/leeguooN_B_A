@@ -2,60 +2,66 @@
   <div class="min-h-screen bg-gradient-to-br from-base-100 to-base-200">
     <!-- Header -->
     <header class="navbar glass sticky top-0 z-50">
-      <div class="container mx-auto px-4">
+      <div class="container mx-auto px-2 sm:px-4">
         <div class="flex-1">
-          <h1 class="text-2xl font-bold gradient-primary bg-clip-text text-transparent">
+          <h1 class="text-xl sm:text-2xl font-bold gradient-primary bg-clip-text text-transparent">
             体育直播
           </h1>
         </div>
-        <div class="flex-none gap-2">
+        <div class="flex-none gap-1 sm:gap-2">
+          <button 
+            @click="shareApp" 
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md focusable"
+          >
+            <ShareIcon class="w-5 h-5 sm:w-6 sm:h-6" />
+          </button>
           <button 
             @click="refreshGames" 
-            class="btn btn-ghost btn-circle focusable"
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md focusable"
             :class="{ 'loading': gamesStore.loading }"
           >
-            <RefreshIcon class="w-6 h-6" />
+            <RefreshIcon class="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
           <button 
             @click="toggleTheme" 
-            class="btn btn-ghost btn-circle focusable"
+            class="btn btn-ghost btn-circle btn-sm sm:btn-md focusable"
           >
-            <SunIcon v-if="isDark" class="w-6 h-6" />
-            <MoonIcon v-else class="w-6 h-6" />
+            <SunIcon v-if="isDark" class="w-5 h-5 sm:w-6 sm:h-6" />
+            <MoonIcon v-else class="w-5 h-5 sm:w-6 sm:h-6" />
           </button>
         </div>
       </div>
     </header>
 
     <!-- League Filter -->
-    <div class="container mx-auto px-4 py-4">
+    <div class="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
       <div class="card bg-base-200 shadow-xl">
-        <div class="card-body">
-          <h2 class="card-title mb-4">选择赛事</h2>
-          <div class="flex flex-wrap gap-2">
+        <div class="card-body p-3 sm:p-6">
+          <h2 class="text-lg sm:card-title mb-3 sm:mb-4">选择赛事</h2>
+          <div class="flex flex-wrap gap-1.5 sm:gap-2">
             <button
               v-for="league in gamesStore.leagues"
               :key="league.id"
               @click="gamesStore.toggleLeague(league.id)"
-              class="btn focusable"
+              class="btn btn-sm sm:btn-md focusable"
               :class="{
                 'btn-primary': gamesStore.selectedLeagues.includes(league.id),
                 'btn-ghost': !gamesStore.selectedLeagues.includes(league.id)
               }"
             >
-              <span class="mr-1">{{ league.icon }}</span>
-              {{ league.name }}
+              <span class="mr-0.5 sm:mr-1">{{ league.icon }}</span>
+              <span class="text-xs sm:text-base">{{ league.name }}</span>
             </button>
-            <div class="divider divider-horizontal"></div>
+            <div class="hidden sm:block divider divider-horizontal"></div>
             <button 
               @click="gamesStore.selectAllLeagues" 
-              class="btn btn-outline btn-sm focusable"
+              class="btn btn-outline btn-xs sm:btn-sm focusable"
             >
               全选
             </button>
             <button 
               @click="gamesStore.clearLeagues" 
-              class="btn btn-outline btn-sm focusable"
+              class="btn btn-outline btn-xs sm:btn-sm focusable"
             >
               清空
             </button>
@@ -101,7 +107,7 @@
             </h3>
           </div>
           
-          <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          <div class="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <GameCard
               v-for="game in games"
               :key="game.id"
@@ -145,7 +151,8 @@ import {
   MoonIcon,
   PlayCircleIcon as PlayIcon,
   CalendarIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ShareIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -286,6 +293,55 @@ function showToastMessage(message, type = 'info') {
   toastMessage.value = message
   toastType.value = type
   showToast.value = true
+}
+
+function shareApp() {
+  const shareData = {
+    title: '体育直播 - NBA/CBA/足球高清直播',
+    text: '免费观看体育赛事高清直播，支持手机、电脑观看',
+    url: window.location.href
+  }
+  
+  if (navigator.share) {
+    navigator.share(shareData)
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          copyToClipboard()
+        }
+      })
+  } else {
+    copyToClipboard()
+  }
+}
+
+function copyToClipboard() {
+  const text = `体育直播 - 高清免费观看\n${window.location.href}`
+  
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(text)
+      .then(() => showToastMessage('链接已复制，可以分享给好友了', 'success'))
+      .catch(() => fallbackCopy(text))
+  } else {
+    fallbackCopy(text)
+  }
+}
+
+function fallbackCopy(text) {
+  const textarea = document.createElement('textarea')
+  textarea.value = text
+  textarea.style.position = 'fixed'
+  textarea.style.opacity = '0'
+  document.body.appendChild(textarea)
+  textarea.select()
+  
+  try {
+    document.execCommand('copy')
+    showToastMessage('链接已复制，可以分享给好友了', 'success')
+  } catch (err) {
+    showToastMessage('复制失败，请手动复制链接', 'error')
+  }
+  
+  document.body.removeChild(textarea)
 }
 
 function formatDate(dateStr) {

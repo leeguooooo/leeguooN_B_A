@@ -7,7 +7,7 @@ export const useGamesStore = defineStore('games', () => {
   const games = ref([])
   const loading = ref(false)
   const error = ref(null)
-  const selectedLeagues = ref(['NBA'])
+  const selectedLeagues = ref(['NBA', '日职联'])
   
   const leagues = ref([
     { id: 'NBA', name: 'NBA', icon: '🏀' },
@@ -17,6 +17,7 @@ export const useGamesStore = defineStore('games', () => {
     { id: '德甲', name: '德甲', icon: '⚽' },
     { id: '意甲', name: '意甲', icon: '⚽' },
     { id: '法甲', name: '法甲', icon: '⚽' },
+    { id: '日职联', name: '日职联', icon: '⚽' },
     { id: '欧冠', name: '欧冠', icon: '🏆' },
   ])
   
@@ -57,7 +58,16 @@ export const useGamesStore = defineStore('games', () => {
     const [month, day] = date.split('-')
     const [hour, minute] = time.split(':')
     const year = new Date().getFullYear()
-    return new Date(year, month - 1, day, hour, minute)
+    
+    // 假设游戏时间是中国时间 (UTC+8)
+    // 创建一个 UTC 时间，然后减去 8 小时的偏移
+    const chinaTime = new Date(year, month - 1, day, hour, minute)
+    const chinaOffset = 8 * 60 // 中国时区是 UTC+8，转换为分钟
+    const localOffset = new Date().getTimezoneOffset() // 本地时区偏移（分钟）
+    const offsetDiff = chinaOffset + localOffset // 总偏移差
+    
+    // 调整时间到本地时区
+    return new Date(chinaTime.getTime() - offsetDiff * 60 * 1000)
   }
   
   async function fetchGames() {

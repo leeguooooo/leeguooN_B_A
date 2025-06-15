@@ -11,12 +11,16 @@
 <script setup>
 import { onMounted } from 'vue'
 import { useNavigationStore } from './stores/navigation'
+import { setupWechatShare } from './utils/wechat'
 
 const navigationStore = useNavigationStore()
 
 onMounted(() => {
   // 初始化导航系统
   navigationStore.initialize()
+  
+  // 设置微信分享
+  setupWechatShare()
 })
 </script>
 
