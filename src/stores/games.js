@@ -128,9 +128,23 @@ export const useGamesStore = defineStore('games', () => {
   
   async function fetchLiveLinks(url) {
     try {
+      // 先尝试从 KV 缓存获取
+      console.log('尝试从 KV 缓存获取直播链接...')
+      const cachedLinks = await kvApi.getLiveLinks(url)
+      
+      if (cachedLinks) {
+        console.log('从 KV 缓存获取到直播链接:', cachedLinks.length, '个')
+        return cachedLinks
+      }
+      
+      // 如果缓存没有，则实时解析
+      console.log('KV 缓存未命中，实时解析直播链接...')
       const response = await axios.get('/api/parseLiveLinks', {
         params: { url }
       })
+      
+      // TODO: 可以考虑将解析结果写入 KV 缓存
+      
       return response.data
     } catch (err) {
       console.error('Failed to fetch live links:', err)
@@ -140,6 +154,17 @@ export const useGamesStore = defineStore('games', () => {
   
   async function getStreamUrl(url) {
     try {
+      // 先尝试从 KV 缓存获取
+      console.log('尝试从 KV 缓存获取流地址...')
+      const cachedStream = await kvApi.getStreamUrl(url)
+      
+      if (cachedStream && cachedStream.streamUrl) {
+        console.log('从 KV 缓存获取到流地址')
+        return cachedStream
+      }
+      
+      // 如果缓存没有，则实时解析
+      console.log('KV 缓存未命中，实时解析流地址...')
       const response = await axios.get('/api/getStreamUrl', {
         params: { url }
       })
@@ -154,6 +179,8 @@ export const useGamesStore = defineStore('games', () => {
       if (!streamUrl || streamUrl.includes('"+') || streamUrl === '"+id+"') {
         throw new Error('获取到的流地址无效，请尝试其他直播源')
       }
+      
+      // TODO: 可以考虑将解析结果写入 KV 缓存
       
       return response.data
     } catch (err) {
