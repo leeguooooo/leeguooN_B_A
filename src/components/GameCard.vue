@@ -48,9 +48,10 @@
       
       <!-- Game Time -->
       <div class="mt-4 flex items-center justify-between">
-        <div class="flex items-center gap-2 text-sm text-base-content/70">
-          <ClockIcon class="w-4 h-4" />
-          {{ formatGameTime(game.gameTime) }}
+        <div class="flex items-center gap-2">
+          <ClockIcon class="w-5 h-5 text-primary" />
+          <span class="text-lg font-bold text-primary">{{ formatGameTime(game.gameTime) }}</span>
+          <span class="text-sm text-base-content/60">{{ getGameDate(game.gameTime) }}</span>
         </div>
         
         <!-- Live Indicator -->
@@ -113,6 +114,12 @@ function parseGameTime(gameTime) {
 function formatGameTime(gameTime) {
   const [date, time] = gameTime.split(' ')
   return time
+}
+
+function getGameDate(gameTime) {
+  const [date, time] = gameTime.split(' ')
+  const [month, day] = date.split('-')
+  return `${month}/${day}`
 }
 
 function handleImageError(event) {

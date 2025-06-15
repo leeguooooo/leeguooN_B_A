@@ -93,10 +93,13 @@
       
       <div v-else class="space-y-8">
         <div v-for="(games, date) in gamesStore.groupedGames" :key="date">
-          <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
-            <CalendarIcon class="w-6 h-6" />
-            {{ formatDate(date) }}
-          </h3>
+          <div class="flex items-center gap-3 mb-6">
+            <CalendarIcon class="w-7 h-7 text-primary" />
+            <h3 class="text-2xl font-bold">
+              {{ formatDate(date) }}
+              <span class="text-base text-base-content/60 ml-2">{{ getWeekday(date) }}</span>
+            </h3>
+          </div>
           
           <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             <GameCard
@@ -292,11 +295,25 @@ function formatDate(dateStr) {
   
   const diffDays = Math.floor((gameDate - today) / (1000 * 60 * 60 * 24))
   
-  if (diffDays === 0) return '今天'
-  if (diffDays === 1) return '明天'
-  if (diffDays === -1) return '昨天'
+  let dateLabel = ''
+  if (diffDays === 0) dateLabel = '今天'
+  else if (diffDays === 1) dateLabel = '明天'
+  else if (diffDays === -1) dateLabel = '昨天'
   
-  return `${month}月${day}日`
+  // 总是显示具体日期
+  const fullDate = `${month}月${day}日`
+  
+  if (dateLabel) {
+    return `${dateLabel} (${fullDate})`
+  }
+  return fullDate
+}
+
+function getWeekday(dateStr) {
+  const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六']
+  const [month, day] = dateStr.split('-')
+  const date = new Date(new Date().getFullYear(), month - 1, day)
+  return weekdays[date.getDay()]
 }
 
 onMounted(() => {
