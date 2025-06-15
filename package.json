@@ -4,7 +4,8 @@
   "description": "Sports Live Streaming Platform",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node api-tests.js",
+    "test:api": "node api-tests.js",
     "start": "node app.js",
     "dev": "vite",
     "build": "vite build",
@@ -14,7 +15,9 @@
     "precommit": "npm run build:check",
     "predeploy": "npm run build:check && echo '✅ Build successful, ready to deploy!'",
     "check": "node scripts/pre-deploy-check.js",
-    "check:all": "npm run check && npm run build:check"
+    "check:all": "npm run check && npm run build:check",
+    "push": "./pre-push.sh",
+    "push:force": "git push origin main"
   },
   "keywords": [],
   "author": "leeguoo",
