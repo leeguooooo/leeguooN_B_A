@@ -94,12 +94,23 @@ async function fetchFromSite(url) {
 
       const liveLinksElements = match.find('li.lab_channel a.item');
       const liveLinks = [];
+      const linkNameCount = {};
 
       liveLinksElements.each((i, el) => {
         const liveLinkElement = $(el);
         const liveLinkURL = liveLinkElement.attr('href');
-        const liveLinkName = liveLinkElement.text().trim();
-        if (liveLinkURL && liveLinkName) {
+        let liveLinkName = liveLinkElement.text().trim();
+        
+        // 过滤掉无效的 javascript:void(0) 链接
+        if (liveLinkURL && liveLinkName && !liveLinkURL.includes('javascript:void')) {
+          // 处理重复的链接名称
+          if (linkNameCount[liveLinkName]) {
+            linkNameCount[liveLinkName]++;
+            liveLinkName = `${liveLinkName}(${linkNameCount[liveLinkName]})`;
+          } else {
+            linkNameCount[liveLinkName] = 1;
+          }
+          
           liveLinks.push({ name: liveLinkName, url: liveLinkURL });
         }
       });
