@@ -15,22 +15,9 @@
             </div>
             
             <!-- Nav -->
-            <nav class="hidden md:flex items-center space-x-6">
-              <a href="#" class="text-white hover:text-red-500 transition">全部赛事</a>
-              <a href="#" class="text-white/60 hover:text-white transition">NBA</a>
-              <a href="#" class="text-white/60 hover:text-white transition">足球</a>
-              <a href="#" class="text-white/60 hover:text-white transition">电竞</a>
-            </nav>
+            <!-- Nav removed for now -->
           </div>
           
-          <!-- Mobile Menu Button -->
-          <button 
-            @click="showMobileMenu = !showMobileMenu"
-            class="md:hidden p-2 text-white/60 hover:text-white transition"
-          >
-            <Bars3Icon v-if="!showMobileMenu" class="w-5 h-5" />
-            <XMarkIcon v-else class="w-5 h-5" />
-          </button>
           
           <!-- Right Actions (Desktop) -->
           <div class="hidden md:flex items-center space-x-4">
@@ -47,13 +34,6 @@
             >
               <ArrowPathIcon class="w-5 h-5" />
             </button>
-            <button class="p-2 text-white/60 hover:text-white transition">
-              <MagnifyingGlassIcon class="w-5 h-5" />
-            </button>
-            <button class="p-2 text-white/60 hover:text-white transition">
-              <BellIcon class="w-5 h-5" />
-            </button>
-            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full"></div>
           </div>
           
           <!-- Mobile Actions -->
@@ -75,17 +55,7 @@
         </div>
       </div>
       
-      <!-- Mobile Menu -->
-      <Transition name="slide-down">
-        <div v-if="showMobileMenu" class="md:hidden bg-[#141414] border-t border-white/10">
-          <nav class="container mx-auto px-3 py-4 space-y-3">
-            <a href="#" class="block text-white hover:text-red-500 transition">全部赛事</a>
-            <a href="#" class="block text-white/60 hover:text-white transition">NBA</a>
-            <a href="#" class="block text-white/60 hover:text-white transition">足球</a>
-            <a href="#" class="block text-white/60 hover:text-white transition">电竞</a>
-          </nav>
-        </div>
-      </Transition>
+      <!-- Mobile Menu removed for now -->
     </header>
 
     <!-- Main Content -->
@@ -106,15 +76,9 @@
             <p class="text-base sm:text-lg md:text-xl text-white/80 mb-4 sm:mb-6 md:mb-8">
               覆盖全球顶级体育赛事，超高清直播体验
             </p>
-            <div class="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-6">
-              <div class="flex items-center space-x-2">
-                <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span class="text-sm sm:text-base text-white font-medium">{{ gamesStore.liveGames.length }} 场直播中</span>
-              </div>
-              <div class="flex items-center space-x-2">
-                <UsersIcon class="w-4 h-4 sm:w-5 sm:h-5 text-white/60" />
-                <span class="text-sm sm:text-base text-white/80">2.3M 在线观看</span>
-              </div>
+            <div class="flex items-center space-x-2">
+              <div class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse"></div>
+              <span class="text-sm sm:text-base text-white font-medium">{{ gamesStore.liveGames.length }} 场直播中</span>
             </div>
           </div>
         </div>
@@ -123,6 +87,12 @@
       <!-- Filter Tabs -->
       <section class="bg-[#1a1a1a] border-b border-white/10 sticky top-14 sm:top-16 z-40">
         <div class="container mx-auto px-3 sm:px-4">
+          <!-- Data Update Time -->
+          <div v-if="dataUpdateTime" class="flex items-center justify-center py-2 text-xs sm:text-sm text-white/60">
+            <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+            <span>数据更新时间：{{ formatUpdateTime(dataUpdateTime) }}</span>
+            <span v-if="isDataStale" class="ml-2 text-yellow-500">(数据可能过期)</span>
+          </div>
           <div class="flex items-center space-x-1 overflow-x-auto scrollbar-hide py-3 sm:py-4">
             <button
               v-for="league in allLeagues"
@@ -151,10 +121,6 @@
               <span class="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-red-500 rounded-full animate-pulse mr-2 sm:mr-3"></span>
               正在直播
             </h2>
-            <a href="#" class="text-red-500 hover:text-red-400 transition flex items-center text-sm sm:text-base">
-              查看全部
-              <ChevronRightIcon class="w-3 h-3 sm:w-4 sm:h-4 ml-1" />
-            </a>
           </div>
           
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
@@ -301,15 +267,12 @@ import GameCardPro from '../components/GameCardPro.vue'
 import Toast from '../components/Toast.vue'
 import {
   ArrowPathIcon,
-  MagnifyingGlassIcon,
-  BellIcon,
   ChevronRightIcon,
   XMarkIcon,
-  UsersIcon,
   TvIcon,
   ArrowTopRightOnSquareIcon,
   ShareIcon,
-  Bars3Icon
+  ClockIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -323,7 +286,8 @@ const currentGame = ref(null)
 const showToast = ref(false)
 const toastMessage = ref('')
 const toastType = ref('info')
-const showMobileMenu = ref(false)
+const dataUpdateTime = ref(null)
+const isDataStale = ref(false)
 
 const allLeagues = computed(() => {
   return [
@@ -369,6 +333,48 @@ function parseGameTime(gameTime) {
 
 async function refreshGames() {
   await gamesStore.fetchGames()
+  // 获取数据更新时间
+  dataUpdateTime.value = gamesStore.lastUpdateTime
+  checkDataFreshness()
+}
+
+function checkDataFreshness() {
+  if (!dataUpdateTime.value) {
+    isDataStale.value = false
+    return
+  }
+  
+  const now = Date.now()
+  const updateTime = typeof dataUpdateTime.value === 'string' 
+    ? parseInt(dataUpdateTime.value) 
+    : dataUpdateTime.value
+  
+  // 如果数据超过10分钟，认为可能过期
+  const timeDiff = now - updateTime
+  isDataStale.value = timeDiff > 10 * 60 * 1000
+}
+
+function formatUpdateTime(timestamp) {
+  if (!timestamp) return '未知'
+  
+  const time = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp
+  const date = new Date(time)
+  const now = new Date()
+  
+  // 如果是今天
+  if (date.toDateString() === now.toDateString()) {
+    return `今天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  }
+  
+  // 如果是昨天
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  if (date.toDateString() === yesterday.toDateString()) {
+    return `昨天 ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  }
+  
+  // 其他日期
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 async function selectGame(game) {
@@ -557,6 +563,8 @@ function fallbackCopy(text) {
 
 onMounted(() => {
   refreshGames()
+  // 每分钟检查一次数据新鲜度
+  setInterval(checkDataFreshness, 60000)
 })
 </script>
 

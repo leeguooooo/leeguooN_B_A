@@ -37,7 +37,14 @@
     <div class="container mx-auto px-2 sm:px-4 py-2 sm:py-4">
       <div class="card bg-base-200 shadow-xl">
         <div class="card-body p-3 sm:p-6">
-          <h2 class="text-lg sm:card-title mb-3 sm:mb-4">选择赛事</h2>
+          <div class="flex items-center justify-between mb-3 sm:mb-4">
+            <h2 class="text-lg sm:card-title">选择赛事</h2>
+            <div v-if="gamesStore.lastUpdateTime" class="flex items-center text-xs sm:text-sm text-base-content/60">
+              <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
+              <span>更新：{{ formatUpdateTime(gamesStore.lastUpdateTime) }}</span>
+              <span v-if="isDataStale" class="ml-1 text-warning">(过期)</span>
+            </div>
+          </div>
           <div class="flex flex-wrap gap-1.5 sm:gap-2">
             <button
               v-for="league in gamesStore.leagues"
@@ -350,6 +357,34 @@ function fallbackCopy(text) {
   }
   
   document.body.removeChild(textarea)
+}
+
+const isDataStale = computed(() => {
+  if (!gamesStore.lastUpdateTime) return false
+  
+  const now = Date.now()
+  const updateTime = typeof gamesStore.lastUpdateTime === 'string' 
+    ? parseInt(gamesStore.lastUpdateTime) 
+    : gamesStore.lastUpdateTime
+  
+  // 如果数据超过10分钟，认为可能过期
+  return (now - updateTime) > 10 * 60 * 1000
+})
+
+function formatUpdateTime(timestamp) {
+  if (!timestamp) return '未知'
+  
+  const time = typeof timestamp === 'string' ? parseInt(timestamp) : timestamp
+  const date = new Date(time)
+  const now = new Date()
+  
+  // 如果是今天
+  if (date.toDateString() === now.toDateString()) {
+    return `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
+  }
+  
+  // 其他日期
+  return `${date.getMonth() + 1}/${date.getDate()} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`
 }
 
 function formatDate(dateStr) {
