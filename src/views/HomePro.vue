@@ -415,13 +415,21 @@ function getLeagueCount(leagueId) {
 }
 
 function isGameLive(game) {
+  // 有比分的比赛就是正在直播的比赛
+  const hasScore = (game.team1Score && game.team1Score !== '') || 
+                   (game.team2Score && game.team2Score !== '')
+  
+  if (hasScore) {
+    return true
+  }
+  
+  // 如果没有比分，但比赛时间在合理范围内，也可能是刚开始的比赛
   const now = new Date()
   const gameDate = parseGameTime(game.gameTime)
   const timeDiff = now - gameDate
   
-  // 只显示已经开始且在2小时内的比赛为"正在直播"
-  // 足球比赛通常90分钟，加上中场休息和伤停补时，约2小时
-  return timeDiff >= 0 && timeDiff <= 2 * 60 * 60 * 1000
+  // 比赛开始后15分钟内，即使没有比分也显示为直播（可能刚开始）
+  return timeDiff >= 0 && timeDiff <= 15 * 60 * 1000
 }
 
 function parseGameTime(gameTime) {

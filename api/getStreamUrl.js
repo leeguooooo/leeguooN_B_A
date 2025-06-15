@@ -49,12 +49,22 @@ export default async function handler(req, res) {
       
       // 请求iframe页面获取m3u8地址
       try {
+        // 根据原始 URL 判断来源网站
+        let referer = 'https://www.jrs16.com/';
+        if (url.includes('sportsteam586.com')) {
+          referer = 'https://www.jrs16.com/';
+        } else if (url.includes('sportsteam53.com')) {
+          referer = 'https://www.jrs03.com/';
+        } else if (url.includes('xndezx.com')) {
+          referer = 'https://m.jrs03.com/';
+        }
+        
         const iframeResponse = await fetch(fullIframeUrl, {
           headers: {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
             'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-            'Referer': url,
+            'Referer': referer,
             'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
             'Sec-Ch-Ua-Mobile': '?0',
             'Sec-Ch-Ua-Platform': '"Windows"',

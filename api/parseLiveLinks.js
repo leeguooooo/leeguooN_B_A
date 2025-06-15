@@ -3,9 +3,15 @@ const cheerio = require('cheerio');
 
 async function fetchHtml(url) {
   try {
-    // 从 URL 中提取 host 作为 referer
-    const urlObj = new URL(url);
-    const referer = `${urlObj.protocol}//${urlObj.host}/`;
+    // 根据 URL 判断来源网站，设置对应的 Referer
+    let referer = 'https://www.jrs16.com/';
+    if (url.includes('sportsteam586.com')) {
+      referer = 'https://www.jrs16.com/';
+    } else if (url.includes('sportsteam53.com')) {
+      referer = 'https://www.jrs03.com/';
+    } else if (url.includes('xndezx.com')) {
+      referer = 'https://m.jrs03.com/';
+    }
     
     const response = await fetch(url, {
       headers: {
@@ -22,7 +28,7 @@ async function fetchHtml(url) {
         'Sec-Ch-Ua-Platform': '"Windows"',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'same-origin',
+        'Sec-Fetch-Site': 'cross-site',
         'Sec-Fetch-User': '?1',
         'Upgrade-Insecure-Requests': '1'
       }

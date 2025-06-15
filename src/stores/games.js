@@ -63,16 +63,21 @@ export const useGamesStore = defineStore('games', () => {
   
   const liveGames = computed(() => {
     return filteredGames.value.filter(game => {
-      // 根据比赛时间判断是否正在进行
+      // 有比分的比赛就是正在直播的比赛
+      const hasScore = (game.team1Score && game.team1Score !== '') || 
+                       (game.team2Score && game.team2Score !== '')
+      
+      if (hasScore) {
+        return true
+      }
+      
+      // 如果没有比分，但比赛时间在合理范围内，也可能是刚开始的比赛
       const now = new Date()
       const gameDate = parseGameTime(game.gameTime)
       const timeDiff = now - gameDate
-      // 足球比赛通常持续2小时（90分钟+中场休息+伤停补时）
-      // 篮球比赛约2.5小时
-      const maxDuration = game.league.includes('NBA') || game.league.includes('CBA') 
-        ? 2.5 * 60 * 60 * 1000  // 篮球2.5小时
-        : 2 * 60 * 60 * 1000     // 足球2小时
-      return timeDiff >= 0 && timeDiff <= maxDuration
+      
+      // 比赛开始后15分钟内，即使没有比分也显示为直播（可能刚开始）
+      return timeDiff >= 0 && timeDiff <= 15 * 60 * 1000
     })
   })
   
