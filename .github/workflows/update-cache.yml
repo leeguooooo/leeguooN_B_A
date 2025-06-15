@@ -12,7 +12,12 @@ jobs:
     steps:
       - name: Trigger cache update
         run: |
-          curl -X POST ${{ secrets.VERCEL_APP_URL }}/api/webhook/update \
+          echo "Triggering cache update..."
+          if [ -z "${{ secrets.VERCEL_APP_URL }}" ]; then
+            echo "Error: VERCEL_APP_URL secret is not set"
+            exit 1
+          fi
+          curl -X POST "${{ secrets.VERCEL_APP_URL }}/api/webhook/update" \
             -H "X-Api-Key: ${{ secrets.API_KEY }}" \
             -H "Content-Type: application/json" \
             --fail \
