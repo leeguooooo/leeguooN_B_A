@@ -3,6 +3,10 @@ const cheerio = require('cheerio');
 
 async function fetchHtml(url) {
   try {
+    // 从 URL 中提取 host 作为 referer
+    const urlObj = new URL(url);
+    const referer = `${urlObj.protocol}//${urlObj.host}/`;
+    
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -11,12 +15,14 @@ async function fetchHtml(url) {
         'Accept-Encoding': 'gzip, deflate',
         'Cache-Control': 'no-cache',
         'Pragma': 'no-cache',
+        'Connection': 'keep-alive',
+        'Referer': referer,
         'Sec-Ch-Ua': '"Not_A Brand";v="8", "Chromium";v="120", "Google Chrome";v="120"',
         'Sec-Ch-Ua-Mobile': '?0',
         'Sec-Ch-Ua-Platform': '"Windows"',
         'Sec-Fetch-Dest': 'document',
         'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-Site': 'same-origin',
         'Sec-Fetch-User': '?1',
         'Upgrade-Insecure-Requests': '1'
       }
@@ -49,7 +55,45 @@ export default async function handler(req, res) {
   try {
     console.log('[API] Parsing live links from:', url);
     
-    const $ = await fetchHtml(url);
+    // 尝试多种方法获取内容
+    let $;
+    let method = 'direct';
+    
+    try {
+      // 方法1：直接获取
+      $ = await fetchHtml(url);
+    } catch (directError) {
+      console.log('[API] Direct fetch failed:', directError.message);
+      
+      // 方法2：尝试使用移动端 User-Agent
+      if (directError.message.includes('403')) {
+        try {
+          method = 'mobile';
+          const mobileResponse = await fetch(url, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'zh-CN,zh;q=0.9',
+            }
+          });
+          
+          if (!mobileResponse.ok) {
+            throw new Error(`HTTP error! status: ${mobileResponse.status}`);
+          }
+          
+          const html = await mobileResponse.text();
+          $ = cheerio.load(html);
+        } catch (mobileError) {
+          console.log('[API] Mobile UA failed:', mobileError.message);
+          throw directError; // 抛出原始错误
+        }
+      } else {
+        throw directError;
+      }
+    }
+    
+    console.log(`[API] Successfully fetched using ${method} method`);
+    
     const subChannels = $('.sub_channel a.item');
     const liveLinks = [];
 
