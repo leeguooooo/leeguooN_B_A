@@ -3,19 +3,21 @@ import axios from 'axios'
 const KV_BASE_URL = 'https://dokv.pwtk.cc/kv'
 
 export const kvApi = {
-  async getGames(timestamp) {
+  async getGames(forceRefresh) {
     try {
       // 使用正确的 key 格式: games/jrs/all
-      // 添加时间戳参数避免缓存
-      const url = timestamp 
-        ? `${KV_BASE_URL}/games/jrs/all?t=${timestamp}`
-        : `${KV_BASE_URL}/games/jrs/all`
-        
-      const response = await axios.get(url, {
+      const response = await axios.get(`${KV_BASE_URL}/games/jrs/all`, {
         headers: {
           'Accept': 'application/json',
-          'Cache-Control': 'no-cache',
-        }
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+        },
+        // 强制刷新时禁用 axios 缓存
+        ...(forceRefresh && { 
+          cache: false,
+          params: { _: Date.now() } // 某些 CDN 会忽略 headers，用这个作为备用
+        })
       })
       
       if (response.data) {

@@ -711,11 +711,29 @@ async function manualUpdateData() {
 }
 
 async function refreshGamesWithTimestamp() {
-  // 添加时间戳参数强制刷新
-  const timestamp = Date.now()
-  await gamesStore.fetchGames(timestamp)
-  dataUpdateTime.value = gamesStore.lastUpdateTime
-  checkDataFreshness()
+  // 直接从 API 获取最新数据，绕过 KV 缓存
+  try {
+    const response = await fetch(`${window.location.origin}/api/games?t=${Date.now()}`)
+    if (response.ok) {
+      const freshGames = await response.json()
+      // 直接更新 store 中的数据
+      gamesStore.games = freshGames
+      gamesStore.lastUpdateTime = Date.now()
+      dataUpdateTime.value = gamesStore.lastUpdateTime
+      checkDataFreshness()
+      console.log(`直接从 API 获取了 ${freshGames.length} 场比赛`)
+    } else {
+      // 如果直接 API 失败，回退到普通刷新
+      await gamesStore.fetchGames(true)
+      dataUpdateTime.value = gamesStore.lastUpdateTime
+      checkDataFreshness()
+    }
+  } catch (error) {
+    console.error('直接 API 调用失败，使用普通刷新:', error)
+    await gamesStore.fetchGames(true)
+    dataUpdateTime.value = gamesStore.lastUpdateTime
+    checkDataFreshness()
+  }
 }
 
 onMounted(() => {
