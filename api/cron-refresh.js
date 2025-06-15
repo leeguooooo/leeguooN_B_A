@@ -1,4 +1,4 @@
-const fetchGamesData = require('../fetchGamesDataFunction');
+const fetchGamesData = require('../fetchJrsGamesData');
 const fetch = require('node-fetch');
 
 // 用于存储最后一次执行时间的变量（这个变量不会在调用之间保留）

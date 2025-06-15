@@ -94,12 +94,30 @@ export const useGamesStore = defineStore('games', () => {
     error.value = null
     
     try {
-      const [data, updateTime] = await Promise.all([
-        kvApi.getGames(),
-        kvApi.getLastUpdateTime()
-      ])
-      games.value = data
+      let data, updateTime
+      
+      // 检查是否使用本地API（开发模式）
+      if (import.meta.env.VITE_USE_LOCAL_API === 'true') {
+        console.log('使用本地API获取数据...')
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'}/games`)
+        if (!response.ok) throw new Error('Failed to fetch from local API')
+        const result = await response.json()
+        data = result.games || result
+        updateTime = result.timestamp || Date.now()
+      } else {
+        // 使用KV API
+        console.log('使用KV API获取数据...')
+        const results = await Promise.all([
+          kvApi.getGames(),
+          kvApi.getLastUpdateTime()
+        ])
+        data = results[0]
+        updateTime = results[1]
+      }
+      
+      games.value = data || []
       lastUpdateTime.value = updateTime
+      console.log(`成功获取 ${games.value.length} 场比赛数据`)
     } catch (err) {
       error.value = err.message
       console.error('Failed to fetch games:', err)
