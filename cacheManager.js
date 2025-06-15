@@ -325,6 +325,33 @@ class CacheManager {
       return cached ? cached.streamUrl : null;
     }
   }
+
+  // 仅缓存游戏数据（用于定时任务，避免超时）
+  async cacheGamesOnly(gamesData, authToken) {
+    try {
+      // 分类游戏数据
+      const nbaGames = gamesData.filter(game => 
+        game.league === 'NBA' || game.league === 'WNBA'
+      );
+      const cbaGames = gamesData.filter(game => 
+        game.league === 'CBA' || game.league === '中职篮'
+      );
+
+      // 并行缓存所有数据
+      await Promise.all([
+        this.setCacheData(this.cacheKeys.games, gamesData, authToken),
+        this.setCacheData(this.cacheKeys.gamesNBA, nbaGames, authToken),
+        this.setCacheData(this.cacheKeys.gamesCBA, cbaGames, authToken),
+        this.setCacheData(this.cacheKeys.lastUpdate, Date.now(), authToken)
+      ]);
+
+      console.log(`✅ 成功缓存 ${gamesData.length} 场比赛数据`);
+      return true;
+    } catch (error) {
+      console.error('❌ 缓存游戏数据失败:', error);
+      return false;
+    }
+  }
 }
 
 module.exports = CacheManager;

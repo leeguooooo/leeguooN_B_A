@@ -5,14 +5,15 @@ const KV_BASE_URL = 'https://dokv.pwtk.cc/kv'
 export const kvApi = {
   async getGames() {
     try {
-      const response = await axios.get(`${KV_BASE_URL}/games_cache`, {
+      // 使用正确的 key 格式: games/jrs/all
+      const response = await axios.get(`${KV_BASE_URL}/games/jrs/all`, {
         headers: {
           'Accept': 'application/json',
         }
       })
       
-      if (response.data && response.data.data) {
-        return response.data.data
+      if (response.data) {
+        return response.data
       }
       
       return []
