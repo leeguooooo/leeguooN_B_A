@@ -59,7 +59,7 @@ async function fetchHtml(url, source) {
   }
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -153,6 +153,6 @@ export default async function handler(req, res) {
   }
 }
 
-export const config = {
+module.exports.config = {
   maxDuration: 30
 };

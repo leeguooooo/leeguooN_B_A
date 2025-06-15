@@ -1,5 +1,5 @@
 // Vercel Serverless Function - Health Check
-export default function handler(req, res) {
+module.exports = function handler(req, res) {
   res.json({
     status: 'ok',
     version: '2.0.0',
@@ -12,4 +12,4 @@ export default function handler(req, res) {
       deployment: 'Vercel'
     }
   });
-}
+};
