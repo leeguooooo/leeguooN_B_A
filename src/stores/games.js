@@ -67,8 +67,12 @@ export const useGamesStore = defineStore('games', () => {
       const now = new Date()
       const gameDate = parseGameTime(game.gameTime)
       const timeDiff = now - gameDate
-      // 假设比赛持续3小时
-      return timeDiff >= 0 && timeDiff <= 3 * 60 * 60 * 1000
+      // 足球比赛通常持续2小时（90分钟+中场休息+伤停补时）
+      // 篮球比赛约2.5小时
+      const maxDuration = game.league.includes('NBA') || game.league.includes('CBA') 
+        ? 2.5 * 60 * 60 * 1000  // 篮球2.5小时
+        : 2 * 60 * 60 * 1000     // 足球2小时
+      return timeDiff >= 0 && timeDiff <= maxDuration
     })
   })
   

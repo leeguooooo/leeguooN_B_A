@@ -105,7 +105,7 @@
             <div class="flex items-center gap-6">
               <div class="flex items-center gap-2 bg-red-500/20 backdrop-blur-sm px-4 py-2 rounded-full border border-red-500/30">
                 <div class="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                <span class="text-sm sm:text-base text-red-400 font-medium">{{ gamesWithLinks }} 场可观看</span>
+                <span class="text-sm sm:text-base text-red-400 font-medium">{{ filteredLiveGames.length }} 场正在直播</span>
               </div>
               
               <!-- Quick Stats -->
@@ -400,8 +400,12 @@ const uniqueLeagues = computed(() => {
 })
 
 const totalLiveGames = computed(() => {
+  // 只计算正在进行的比赛的直播源数量
   return gamesStore.games.reduce((total, game) => {
-    return total + (game.liveLinks ? game.liveLinks.length : 0)
+    if (isGameLive(game)) {
+      return total + (game.liveLinks ? game.liveLinks.length : 0)
+    }
+    return total
   }, 0)
 })
 
@@ -414,7 +418,10 @@ function isGameLive(game) {
   const now = new Date()
   const gameDate = parseGameTime(game.gameTime)
   const timeDiff = now - gameDate
-  return timeDiff >= 0 && timeDiff <= 3 * 60 * 60 * 1000
+  
+  // 只显示已经开始且在2小时内的比赛为"正在直播"
+  // 足球比赛通常90分钟，加上中场休息和伤停补时，约2小时
+  return timeDiff >= 0 && timeDiff <= 2 * 60 * 60 * 1000
 }
 
 function parseGameTime(gameTime) {
