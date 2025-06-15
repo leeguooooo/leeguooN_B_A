@@ -43,6 +43,15 @@
               <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
               <span>更新：{{ formatUpdateTime(gamesStore.lastUpdateTime) }}</span>
               <span v-if="isDataStale" class="ml-1 text-warning">(过期)</span>
+              <button 
+                v-if="isDataStale"
+                @click="manualUpdateData"
+                class="ml-2 btn btn-xs btn-warning"
+                :disabled="updatingData"
+              >
+                <ArrowPathIcon class="w-3 h-3" :class="{ 'animate-spin': updatingData }" />
+                {{ updatingData ? '更新中' : '更新' }}
+              </button>
             </div>
           </div>
           <div class="flex flex-wrap gap-1.5 sm:gap-2">
@@ -167,7 +176,9 @@ import {
   PlayCircleIcon as PlayIcon,
   CalendarIcon,
   ExclamationTriangleIcon,
-  ShareIcon
+  ShareIcon,
+  ClockIcon,
+  ArrowPathIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -181,6 +192,7 @@ const currentGame = ref(null)
 const showToast = ref(false)
 const toastMessage = ref('')
 const toastType = ref('info')
+const updatingData = ref(false)
 
 const isDark = computed(() => {
   return document.documentElement.getAttribute('data-theme') === 'dark'
@@ -413,6 +425,45 @@ function getWeekday(dateStr) {
   const [month, day] = dateStr.split('-')
   const date = new Date(new Date().getFullYear(), month - 1, day)
   return weekdays[date.getDay()]
+}
+
+async function manualUpdateData() {
+  if (updatingData.value) return
+  
+  updatingData.value = true
+  showToastMessage('正在请求更新数据...', 'info')
+  
+  try {
+    // 如果有 API_KEY，尝试触发后端更新
+    const apiKey = localStorage.getItem('apiKey')
+    if (apiKey) {
+      const response = await fetch('/api/webhook/update', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        showToastMessage('数据更新成功！', 'success')
+        // 等待一下让后端处理完成
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+    
+    // 刷新页面数据
+    await refreshGames()
+    
+    if (!apiKey) {
+      showToastMessage('已刷新页面数据', 'success')
+    }
+  } catch (error) {
+    console.error('更新失败:', error)
+    showToastMessage('更新失败，请稍后重试', 'error')
+  } finally {
+    updatingData.value = false
+  }
 }
 
 onMounted(() => {

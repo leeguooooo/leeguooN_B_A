@@ -1,8 +1,5 @@
-// Vercel Serverless Function 入口
-const app = require('../app');
-
-// 添加健康检查
-app.get('/api/health', (req, res) => {
+// Vercel Serverless Function - Health Check
+export default function handler(req, res) {
   res.json({
     status: 'ok',
     version: '2.0.0',
@@ -15,6 +12,4 @@ app.get('/api/health', (req, res) => {
       deployment: 'Vercel'
     }
   });
-});
-
-module.exports = app;
+}

@@ -339,10 +339,10 @@ class CacheManager {
 
       // 并行缓存所有数据
       await Promise.all([
-        this.setCacheData(this.cacheKeys.games, gamesData, authToken),
-        this.setCacheData(this.cacheKeys.gamesNBA, nbaGames, authToken),
-        this.setCacheData(this.cacheKeys.gamesCBA, cbaGames, authToken),
-        this.setCacheData(this.cacheKeys.lastUpdate, Date.now(), authToken)
+        this.set(this.cacheKeys.games, gamesData, authToken),
+        this.set(this.cacheKeys.gamesNBA, nbaGames, authToken),
+        this.set(this.cacheKeys.gamesCBA, cbaGames, authToken),
+        this.set(this.cacheKeys.lastUpdate, Date.now(), authToken)
       ]);
 
       console.log(`✅ 成功缓存 ${gamesData.length} 场比赛数据`);

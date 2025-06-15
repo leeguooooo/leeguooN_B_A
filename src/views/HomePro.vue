@@ -24,6 +24,7 @@
             <button 
               @click="shareApp"
               class="p-2 text-white/60 hover:text-white transition"
+              title="分享"
             >
               <ShareIcon class="w-5 h-5" />
             </button>
@@ -31,9 +32,17 @@
               @click="refreshGames"
               class="p-2 text-white/60 hover:text-white transition"
               :class="{ 'animate-spin': gamesStore.loading }"
+              title="刷新"
             >
               <ArrowPathIcon class="w-5 h-5" />
             </button>
+            <a 
+              href="/settings.html"
+              class="p-2 text-white/60 hover:text-white transition"
+              title="设置"
+            >
+              <CogIcon class="w-5 h-5" />
+            </a>
           </div>
           
           <!-- Mobile Actions -->
@@ -51,6 +60,12 @@
             >
               <ArrowPathIcon class="w-4 h-4" />
             </button>
+            <a 
+              href="/settings.html"
+              class="p-1.5 text-white/60 hover:text-white transition"
+            >
+              <CogIcon class="w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>
@@ -92,6 +107,15 @@
             <ClockIcon class="w-3 h-3 sm:w-4 sm:h-4 mr-1" />
             <span>数据更新时间：{{ formatUpdateTime(dataUpdateTime) }}</span>
             <span v-if="isDataStale" class="ml-2 text-yellow-500">(数据可能过期)</span>
+            <button 
+              v-if="isDataStale"
+              @click="manualUpdateData"
+              class="ml-3 px-3 py-1 bg-yellow-500/20 hover:bg-yellow-500/30 text-yellow-500 rounded-full text-xs transition-all flex items-center gap-1"
+              :disabled="updatingData"
+            >
+              <ArrowPathIcon class="w-3 h-3" :class="{ 'animate-spin': updatingData }" />
+              {{ updatingData ? '更新中...' : '立即更新' }}
+            </button>
           </div>
           <div class="flex items-center space-x-1 overflow-x-auto scrollbar-hide py-3 sm:py-4">
             <button
@@ -272,7 +296,8 @@ import {
   TvIcon,
   ArrowTopRightOnSquareIcon,
   ShareIcon,
-  ClockIcon
+  ClockIcon,
+  CogIcon
 } from '@heroicons/vue/24/outline'
 
 const router = useRouter()
@@ -288,6 +313,7 @@ const toastMessage = ref('')
 const toastType = ref('info')
 const dataUpdateTime = ref(null)
 const isDataStale = ref(false)
+const updatingData = ref(false)
 
 const allLeagues = computed(() => {
   return [
@@ -559,6 +585,53 @@ function fallbackCopy(text) {
   }
   
   document.body.removeChild(textarea)
+}
+
+async function manualUpdateData() {
+  if (updatingData.value) return
+  
+  updatingData.value = true
+  showToast.value = true
+  toastMessage.value = '正在请求更新数据...'
+  toastType.value = 'info'
+  
+  try {
+    // 如果有 API_KEY，尝试触发后端更新
+    const apiKey = localStorage.getItem('apiKey')
+    if (apiKey) {
+      const response = await fetch('/api/webhook/update', {
+        method: 'POST',
+        headers: {
+          'X-Api-Key': apiKey,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (response.ok) {
+        showToast.value = true
+        toastMessage.value = '数据更新成功！'
+        toastType.value = 'success'
+        // 等待一下让后端处理完成
+        await new Promise(resolve => setTimeout(resolve, 2000))
+      }
+    }
+    
+    // 刷新页面数据
+    await refreshGames()
+    
+    if (!apiKey) {
+      showToast.value = true
+      toastMessage.value = '已刷新页面数据'
+      toastType.value = 'success'
+    }
+  } catch (error) {
+    console.error('更新失败:', error)
+    showToast.value = true
+    toastMessage.value = '更新失败，请稍后重试'
+    toastType.value = 'error'
+  } finally {
+    updatingData.value = false
+  }
 }
 
 onMounted(() => {
