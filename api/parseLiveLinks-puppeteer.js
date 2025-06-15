@@ -1,6 +1,12 @@
 // 使用 Puppeteer 解析直播链接 API
 const puppeteer = require('puppeteer');
 
+// 仅在 Vercel 环境中使用 @sparticuz/chromium
+let chromium;
+if (process.env.VERCEL) {
+  chromium = require('@sparticuz/chromium');
+}
+
 async function fetchHtmlWithPuppeteer(url, source) {
   let browser;
   
@@ -24,8 +30,10 @@ async function fetchHtmlWithPuppeteer(url, source) {
     };
 
     // Vercel 环境需要特殊配置
-    if (process.env.VERCEL) {
-      options.executablePath = process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/chromium-browser';
+    if (process.env.VERCEL && chromium) {
+      options.args = [...chromium.args, ...options.args];
+      options.executablePath = await chromium.executablePath();
+      options.headless = chromium.headless;
     }
 
     browser = await puppeteer.launch(options);
