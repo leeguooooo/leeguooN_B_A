@@ -660,46 +660,62 @@ async function manualUpdateData() {
   
   updatingData.value = true
   showToast.value = true
-  toastMessage.value = '正在请求更新数据...'
+  toastMessage.value = '正在更新数据...'
   toastType.value = 'info'
   
   try {
-    // 如果有 API_KEY，尝试触发后端更新
-    const apiKey = localStorage.getItem('apiKey')
-    if (apiKey) {
-      const response = await fetch('/api/webhook/update', {
-        method: 'POST',
-        headers: {
-          'X-Api-Key': apiKey,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (response.ok) {
-        showToast.value = true
-        toastMessage.value = '数据更新成功！'
-        toastType.value = 'success'
-        // 等待一下让后端处理完成
-        await new Promise(resolve => setTimeout(resolve, 2000))
+    // 优先使用配置的 API_KEY 或默认的
+    const apiKey = localStorage.getItem('apiKey') || 'kuaikuaishiyongshuangjiegunheiheihahei'
+    
+    // 获取当前的 Vercel URL
+    const baseUrl = window.location.origin
+    
+    // 触发后端更新
+    const response = await fetch(`${baseUrl}/api/webhook/update`, {
+      method: 'POST',
+      headers: {
+        'X-Api-Key': apiKey,
+        'Content-Type': 'application/json'
       }
-    }
+    })
     
-    // 刷新页面数据
-    await refreshGames()
-    
-    if (!apiKey) {
+    if (response.ok) {
+      const result = await response.json()
+      console.log('Update result:', result)
+      
       showToast.value = true
-      toastMessage.value = '已刷新页面数据'
+      toastMessage.value = `正在处理 ${result.gamesCount || 0} 场比赛数据...`
+      toastType.value = 'info'
+      
+      // 等待更长时间确保 KV 存储更新完成
+      await new Promise(resolve => setTimeout(resolve, 3000))
+      
+      // 强制刷新页面数据，添加时间戳避免缓存
+      await refreshGamesWithTimestamp()
+      
+      showToast.value = true
+      toastMessage.value = '数据更新成功！'
       toastType.value = 'success'
+    } else {
+      const error = await response.text()
+      throw new Error(`更新失败: ${response.status} - ${error}`)
     }
   } catch (error) {
     console.error('更新失败:', error)
     showToast.value = true
-    toastMessage.value = '更新失败，请稍后重试'
+    toastMessage.value = error.message || '更新失败，请稍后重试'
     toastType.value = 'error'
   } finally {
     updatingData.value = false
   }
+}
+
+async function refreshGamesWithTimestamp() {
+  // 添加时间戳参数强制刷新
+  const timestamp = Date.now()
+  await gamesStore.fetchGames(timestamp)
+  dataUpdateTime.value = gamesStore.lastUpdateTime
+  checkDataFreshness()
 }
 
 onMounted(() => {

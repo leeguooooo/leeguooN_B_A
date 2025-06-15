@@ -3,12 +3,18 @@ import axios from 'axios'
 const KV_BASE_URL = 'https://dokv.pwtk.cc/kv'
 
 export const kvApi = {
-  async getGames() {
+  async getGames(timestamp) {
     try {
       // 使用正确的 key 格式: games/jrs/all
-      const response = await axios.get(`${KV_BASE_URL}/games/jrs/all`, {
+      // 添加时间戳参数避免缓存
+      const url = timestamp 
+        ? `${KV_BASE_URL}/games/jrs/all?t=${timestamp}`
+        : `${KV_BASE_URL}/games/jrs/all`
+        
+      const response = await axios.get(url, {
         headers: {
           'Accept': 'application/json',
+          'Cache-Control': 'no-cache',
         }
       })
       
