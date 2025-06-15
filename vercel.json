@@ -1,47 +1,17 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "app.js",
-      "use": "@vercel/node"
-    },
-    {
-      "src": "api/**/*.js",
-      "use": "@vercel/node"
+  "functions": {
+    "api/index.js": {
+      "maxDuration": 30
     }
-  ],
-  "routes": [
+  },
+  "rewrites": [
     {
-      "src": "/api/manual-refresh",
-      "dest": "/api/manual-refresh.js"
+      "source": "/api/(.*)",
+      "destination": "/api/index.js"
     },
     {
-      "src": "/api/cron-refresh",
-      "dest": "/api/cron-refresh.js"
-    },
-    {
-      "src": "/api/cache-status",
-      "dest": "/api/cache-status.js"
-    },
-    {
-      "src": "/api/updateGames",
-      "dest": "/api/updateGames.js"
-    },
-    {
-      "src": "/api/(.*)",
-      "dest": "/app.js"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/app.js"
+      "source": "/(.*)",
+      "destination": "/$1"
     }
-  ],
-  "crons": [
-
-  ],
-  "env": {
-    "CRON_SECRET": "@cron_secret",
-    "API_KEY": "@api_key",
-    "VERCEL": "1"
-  }
+  ]
 }

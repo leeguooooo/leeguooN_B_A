@@ -1,0 +1,11 @@
+{
+  "version": "2.0.0",
+  "buildTime": "2024-06-14",
+  "framework": "Vue 3 + Vite",
+  "features": [
+    "专业UI设计",
+    "中文蓝光优先",
+    "多端适配",
+    "HLS播放器"
+  ]
+}

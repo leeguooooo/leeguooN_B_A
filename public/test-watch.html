@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>测试观看页面 - 体育直播</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e, #16213e);
+            color: white;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+            margin-top: 5px;
+        }
+
+        .games-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .game-card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .game-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .league-badge {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .game-time {
+            font-size: 14px;
+            color: rgba(255,255,255,0.7);
+        }
+
+        .teams {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+
+        .team-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .vs {
+            font-size: 16px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+
+        .stream-status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .status-ready {
+            background: #4CAF50;
+        }
+
+        .status-unavailable {
+            background: #f44336;
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .watch-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .watch-btn.primary {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+
+        .watch-btn.primary:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        .watch-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #666;
+            color: #aaa;
+        }
+
+        .debug {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🧪 测试观看页面</h1>
+        <p>验证数据加载和统计功能</p>
+    </div>
+
+    <div class="debug" id="debugInfo">
+        <div>🔄 正在加载数据...</div>
+    </div>
+
+    <div class="stats" id="statsContainer">
+        <div class="stat">
+            <div class="stat-number" id="totalGames">-</div>
+            <div class="stat-label">总比赛</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number" id="readyStreams">-</div>
+            <div class="stat-label">可观看</div>
+        </div>
+        <div class="stat">
+            <div class="stat-number" id="liveGames">-</div>
+            <div class="stat-label">进行中</div>
+        </div>
+    </div>
+
+    <div class="games-grid" id="gamesGrid">
+        <!-- 游戏卡片将在这里动态生成 -->
+    </div>
+
+    <script>
+        let allGames = [];
+
+        // 加载测试数据
+        async function loadTestData() {
+            try {
+                const debugDiv = document.getElementById('debugInfo');
+                
+                // 测试本地API
+                debugDiv.innerHTML = '<div>📡 测试本地API...</div>';
+                let response = await fetch('/api/games');
+                debugDiv.innerHTML += `<div>本地API状态: ${response.status}</div>`;
+                
+                if (response.ok) {
+                    allGames = await response.json();
+                    debugDiv.innerHTML += `<div>✅ 本地API: ${allGames.length} 场比赛</div>`;
+                } else {
+                    // 测试KV数据
+                    debugDiv.innerHTML += '<div>🔄 测试KV存储...</div>';
+                    response = await fetch('https://dokv.pwtk.cc/kv/games/jrs/demo_ready');
+                    const text = await response.text();
+                    allGames = JSON.parse(text);
+                    debugDiv.innerHTML += `<div>✅ KV存储: ${allGames.length} 场测试比赛</div>`;
+                }
+                
+                // 显示数据详情
+                const readyCount = allGames.filter(game => 
+                    game.directStream && game.directStream.status === 'ready'
+                ).length;
+                
+                debugDiv.innerHTML += `<div>📊 统计: 总共${allGames.length}场, 可观看${readyCount}场</div>`;
+                
+                updateStats();
+                renderGames();
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('debugInfo').innerHTML = 
+                    `<div style="color: #f44336;">❌ 加载失败: ${error.message}</div>`;
+            }
+        }
+
+        // 更新统计信息
+        function updateStats() {
+            const totalGames = allGames.length;
+            const readyStreams = allGames.filter(game => 
+                game.directStream && game.directStream.status === 'ready'
+            ).length;
+            const now = new Date();
+            const liveGames = allGames.filter(game => {
+                const gameTime = new Date(`2025-${game.gameTime.replace('06-', '06/')}`);
+                const timeDiff = Math.abs(now - gameTime) / (1000 * 60); // 分钟差
+                return timeDiff <= 120; // 2小时内的比赛认为是直播
+            }).length;
+
+            document.getElementById('totalGames').textContent = totalGames;
+            document.getElementById('readyStreams').textContent = readyStreams;
+            document.getElementById('liveGames').textContent = liveGames;
+        }
+
+        // 渲染比赛列表
+        function renderGames() {
+            const grid = document.getElementById('gamesGrid');
+            
+            // 按可观看状态排序
+            allGames.sort((a, b) => {
+                const aReady = a.directStream && a.directStream.status === 'ready' ? 1 : 0;
+                const bReady = b.directStream && b.directStream.status === 'ready' ? 1 : 0;
+                return bReady - aReady;
+            });
+
+            grid.innerHTML = allGames.map(game => createGameCard(game)).join('');
+        }
+
+        // 创建比赛卡片
+        function createGameCard(game) {
+            const hasStream = game.directStream && game.directStream.status === 'ready';
+            const statusClass = hasStream ? 'status-ready' : 'status-unavailable';
+            const statusText = hasStream ? '🎥 直播可用' : '⏳ ' + (game.directStream?.message || '暂无直播');
+
+            return `
+                <div class="game-card">
+                    <div class="game-header">
+                        <div class="league-badge">${game.league}</div>
+                        <div class="game-time">${game.gameTime}</div>
+                    </div>
+                    
+                    <div class="teams">
+                        <div class="team">
+                            <div class="team-name">${game.team1}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <div class="team-name">${game.team2}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="stream-status">
+                        <div class="status-indicator ${statusClass}"></div>
+                        <span>${statusText}</span>
+                    </div>
+                    
+                    <button class="watch-btn ${hasStream ? 'primary' : ''}" 
+                            ${hasStream ? `onclick="testWatch('${game.directStream.m3u8Url}', '${game.team1} vs ${game.team2}')"` : 'disabled'}>
+                        ${hasStream ? '🎬 测试观看' : '⏸️ 暂无直播'}
+                    </button>
+                </div>
+            `;
+        }
+
+        // 测试观看功能
+        function testWatch(streamUrl, title) {
+            alert(`🎬 测试观看功能\\n\\n比赛: ${title}\\n流地址: ${streamUrl}\\n\\n在真实应用中这里会打开视频播放器`);
+        }
+
+        // 页面加载时获取数据
+        document.addEventListener('DOMContentLoaded', loadTestData);
+    </script>
+</body>
+</html>

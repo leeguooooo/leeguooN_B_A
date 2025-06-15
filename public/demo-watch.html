@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直播演示 - 一键观看</title>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #1a1a2e;
+            color: white;
+            font-family: system-ui, sans-serif;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #4CAF50;
+        }
+        .game-card {
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            padding: 20px;
+            margin: 20px 0;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+        .game-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+        .league {
+            background: #4CAF50;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 14px;
+        }
+        .teams {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            margin: 15px 0;
+        }
+        .team {
+            flex: 1;
+            text-align: center;
+        }
+        .team img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-bottom: 10px;
+        }
+        .vs {
+            font-size: 20px;
+            font-weight: bold;
+            color: #4CAF50;
+        }
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .ready { background: #4CAF50; }
+        .unavailable { background: #f44336; animation: none; }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .watch-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .watch-btn.ready {
+            background: linear-gradient(45deg, #4CAF50, #45a049);
+            color: white;
+        }
+        .watch-btn.ready:hover {
+            transform: scale(1.05);
+        }
+        .watch-btn:disabled {
+            background: #666;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+        .video-player {
+            width: 100%;
+            height: 400px;
+            background: #000;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎬 直播演示 - 集成m3u8观看</h1>
+        
+        <div id="gamesContainer">
+            <!-- 比赛卡片将在这里生成 -->
+        </div>
+        
+        <video id="videoPlayer" class="video-player" controls></video>
+    </div>
+
+    <script>
+        let hls = null;
+
+        // 加载演示数据
+        async function loadDemoData() {
+            try {
+                const response = await fetch('https://dokv.pwtk.cc/kv/games/jrs/demo');
+                const text = await response.text();
+                const games = JSON.parse(text);
+                renderGames(games);
+            } catch (error) {
+                console.error('加载数据失败:', error);
+                document.getElementById('gamesContainer').innerHTML = 
+                    '<div style="text-align: center; color: #f44336;">加载演示数据失败</div>';
+            }
+        }
+
+        // 渲染比赛
+        function renderGames(games) {
+            const container = document.getElementById('gamesContainer');
+            container.innerHTML = games.map(game => `
+                <div class="game-card">
+                    <div class="game-header">
+                        <div class="league">${game.league}</div>
+                        <div>${game.gameTime}</div>
+                    </div>
+                    
+                    <div class="teams">
+                        <div class="team">
+                            <img src="${game.team1Logo}" alt="${game.team1}" 
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiM0Q0FGNTASCJ8L3N2Zz4='">
+                            <div>${game.team1}</div>
+                        </div>
+                        <div class="vs">VS</div>
+                        <div class="team">
+                            <img src="${game.team2Logo}" alt="${game.team2}"
+                                 onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTAiIGhlaWdodD0iNTAiIGZpbGw9IiM0Q0FGNTASCJ8L3N2Zz4='">
+                            <div>${game.team2}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="status">
+                        <div class="status-dot ${game.directStream?.status === 'ready' ? 'ready' : 'unavailable'}"></div>
+                        <span>${game.directStream?.status === 'ready' ? '🎥 直播可用' : '⏳ ' + (game.directStream?.message || '暂无直播')}</span>
+                    </div>
+                    
+                    <button class="watch-btn ${game.directStream?.status === 'ready' ? 'ready' : ''}" 
+                            ${game.directStream?.status === 'ready' ? 
+                                `onclick="watchGame('${game.directStream.m3u8Url}', '${game.team1} vs ${game.team2}')"` : 
+                                'disabled'}>
+                        ${game.directStream?.status === 'ready' ? '🎬 立即观看' : '暂无直播'}
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        // 观看比赛
+        function watchGame(streamUrl, title) {
+            const video = document.getElementById('videoPlayer');
+            video.style.display = 'block';
+            video.scrollIntoView({ behavior: 'smooth' });
+
+            console.log('开始播放:', title, streamUrl);
+
+            // 清理之前的HLS实例
+            if (hls) {
+                hls.destroy();
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls({
+                    debug: true,
+                    enableWorker: true,
+                    lowLatencyMode: true
+                });
+                
+                hls.loadSource(streamUrl);
+                hls.attachMedia(video);
+                
+                hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    console.log('HLS流加载成功');
+                    video.play();
+                });
+                
+                hls.on(Hls.Events.ERROR, (event, data) => {
+                    console.error('HLS播放错误:', data);
+                    if (data.fatal) {
+                        switch(data.type) {
+                            case Hls.ErrorTypes.NETWORK_ERROR:
+                                console.log('网络错误，尝试重新加载...');
+                                hls.startLoad();
+                                break;
+                            case Hls.ErrorTypes.MEDIA_ERROR:
+                                console.log('媒体错误，尝试恢复...');
+                                hls.recoverMediaError();
+                                break;
+                            default:
+                                console.log('无法恢复的错误');
+                                hls.destroy();
+                                break;
+                        }
+                    }
+                });
+                
+            } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+                // Safari原生支持
+                video.src = streamUrl;
+                video.play();
+            } else {
+                alert('浏览器不支持HLS播放');
+            }
+        }
+
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', loadDemoData);
+    </script>
+</body>
+</html>

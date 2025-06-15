@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+        .success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <h1>CORS 修复测试</h1>
+    
+    <div class="test-section">
+        <h2>测试步骤</h2>
+        <button onclick="testOldWay()">1. 测试旧方式（会失败）</button>
+        <button onclick="testNewWay()">2. 测试新方式（使用播放器）</button>
+        <button onclick="testProxyAPI()">3. 测试代理API</button>
+        <div id="result"></div>
+    </div>
+
+    <script>
+        const resultDiv = document.getElementById('result');
+        
+        function showResult(message, isSuccess = true) {
+            resultDiv.className = `result ${isSuccess ? 'success' : 'error'}`;
+            resultDiv.textContent = message;
+        }
+
+        async function testOldWay() {
+            showResult('测试直接访问流地址（预期会失败）...');
+            
+            try {
+                // 模拟旧的方式：直接访问流地址
+                const testUrl = 'https://v4-378bf8a93e4b8cd5814bac55c9390fc3.livehwc4.com/hdl7.szsummer.cn/live/396969.m3u8';
+                const response = await fetch(testUrl);
+                
+                if (response.ok) {
+                    showResult('意外成功！可能CORS已经被浏览器缓存', true);
+                } else {
+                    showResult(`预期的失败: ${response.status} ${response.statusText}`, false);
+                }
+            } catch (error) {
+                showResult(`CORS错误（预期）: ${error.message}`, false);
+            }
+        }
+
+        async function testNewWay() {
+            showResult('测试新方式：打开播放器页面...');
+            
+            // 模拟从首页点击观看链接
+            const testLiveUrl = 'http://play.xndezx.com/play/sm.html?id=265&id2=';
+            window.open(`/player.html?url=${encodeURIComponent(testLiveUrl)}`, '_blank');
+            
+            showResult('已打开播放器页面，请检查是否能正常播放', true);
+        }
+
+        async function testProxyAPI() {
+            showResult('测试代理API...');
+            
+            try {
+                // 测试代理端点
+                const testM3u8 = 'https://v4-378bf8a93e4b8cd5814bac55c9390fc3.livehwc4.com/hdl7.szsummer.cn/live/396969.m3u8';
+                const proxyUrl = `/proxy/m3u8?url=${encodeURIComponent(testM3u8)}`;
+                
+                const response = await fetch(proxyUrl);
+                const text = await response.text();
+                
+                if (response.ok && text.includes('#EXTM3U')) {
+                    showResult(`代理API成功！\n状态: ${response.status}\n内容预览: ${text.substring(0, 200)}...`, true);
+                } else {
+                    showResult(`代理API失败: ${response.status} ${response.statusText}`, false);
+                }
+            } catch (error) {
+                showResult(`代理API错误: ${error.message}`, false);
+            }
+        }
+    </script>
+</body>
+</html>
