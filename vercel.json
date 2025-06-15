@@ -2,17 +2,8 @@
   "functions": {
     "api/index.js": {
       "maxDuration": 30
-    },
-    "api/cron/update-cache.js": {
-      "maxDuration": 30
     }
   },
-  "crons": [
-    {
-      "path": "/api/cron/update-cache",
-      "schedule": "*/30 * * * *"
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/(.*)",

@@ -1,4 +1,4 @@
-# Vercel 缓存方案说明
+# Vercel 缓存方案说明（免费账户版）
 
 ## 问题分析
 
@@ -8,6 +8,7 @@
 2. **执行时间限制**: 最多 30 秒，无法完成大量数据抓取和流解析
 3. **无后台进程**: 不能运行传统的定时任务
 4. **异步任务中断**: 函数响应后立即终止，异步更新不可靠
+5. **免费账户限制**: Cron Jobs 有限制，需要替代方案
 
 ## 解决方案
 
@@ -27,22 +28,29 @@ games/jrs/streams    - 流地址缓存
 games/jrs/last_update - 最后更新时间戳
 ```
 
-### 2. Vercel Cron Jobs 定时更新
+### 2. GitHub Actions 定时更新（免费方案）
 
-**配置** (vercel.json):
-```json
-{
-  "crons": [{
-    "path": "/api/cron/update-cache",
-    "schedule": "*/30 * * * *"  // 每30分钟执行
-  }]
-}
+**配置** (.github/workflows/update-cache.yml):
+```yaml
+on:
+  schedule:
+    - cron: '*/5 * * * *'  # 每5分钟执行
+  workflow_dispatch: # 允许手动触发
 ```
 
 **特点**:
-- Vercel 自动调用，保证定时执行
-- 只更新游戏数据，不解析流地址（避免超时）
-- 需要设置 `CRON_SECRET` 环境变量验证请求
+- GitHub Actions 免费额度：每月 2000 分钟
+- 通过 webhook 触发 Vercel 函数更新缓存
+- 比 Vercel Cron Jobs 更灵活，完全免费
+
+**计算**: 
+- 每5分钟运行 = 每天 288 次
+- 每次约 10 秒 = 每天 48 分钟
+- 每月约 1440 分钟（在 2000 分钟免费额度内）
+
+**Webhook 端点**: `/api/webhook/update`
+- 需要 `X-Api-Key` 头验证
+- 只更新游戏数据，不解析流地址
 
 ### 3. 分离数据抓取和流解析
 
@@ -71,18 +79,25 @@ const response = await axios.get('https://dokv.pwtk.cc/kv/games/jrs/all');
 
 ## 环境变量配置
 
-在 Vercel Dashboard 中设置：
+### Vercel Dashboard 中设置：
 
 ```bash
 KV_AUTH_TOKEN=your_kv_auth_token     # KV 存储认证令牌
-CRON_SECRET=your_cron_secret         # Cron Job 验证密钥
 API_KEY=your_api_key                 # API 端点保护密钥
+```
+
+### GitHub Secrets 中设置：
+
+```bash
+VERCEL_APP_URL=https://your-app.vercel.app  # 你的 Vercel 应用 URL
+API_KEY=your_api_key                        # 与 Vercel 中相同的 API Key
+KV_BASE_URL=https://dokv.pwtk.cc/kv        # KV 存储基础 URL
 ```
 
 ## 缓存更新流程
 
-1. **定时更新** (每30分钟):
-   - Vercel Cron → `/api/cron/update-cache`
+1. **定时更新** (每5分钟):
+   - GitHub Actions → `/api/webhook/update`
    - 抓取游戏数据 → 存储到 KV
 
 2. **前端获取数据**:

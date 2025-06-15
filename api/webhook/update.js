@@ -1,11 +1,15 @@
-// Vercel Cron Job - 定时更新缓存
+// Webhook endpoint for cache updates (triggered by GitHub Actions)
 const fetchGamesData = require('../../fetchGamesDataFunction-working');
 const CacheManager = require('../../cacheManager');
 
 export default async function handler(req, res) {
-  // 验证是否是 Vercel Cron 调用
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  // 验证 API Key
+  const apiKey = req.headers['x-api-key'];
+  if (!apiKey || apiKey !== process.env.API_KEY) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
 
@@ -18,23 +22,32 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('Starting scheduled cache update...');
+    console.log('[Webhook] Starting cache update...');
     
     // 抓取最新数据
+    const startTime = Date.now();
     const freshGames = await fetchGamesData();
-    console.log(`Fetched ${freshGames.length} games`);
-
-    // 更新缓存（不解析流地址，避免超时）
-    await cacheManager.cacheGamesOnly(freshGames, authToken);
+    const fetchTime = Date.now() - startTime;
     
-    console.log('Cache updated successfully');
+    console.log(`[Webhook] Fetched ${freshGames.length} games in ${fetchTime}ms`);
+
+    // 更新缓存（只更新游戏数据）
+    const cacheStart = Date.now();
+    await cacheManager.cacheGamesOnly(freshGames, authToken);
+    const cacheTime = Date.now() - cacheStart;
+    
+    console.log(`[Webhook] Cache updated in ${cacheTime}ms`);
+    
     return res.status(200).json({ 
       success: true, 
       gamesCount: freshGames.length,
+      fetchTime,
+      cacheTime,
+      totalTime: Date.now() - startTime,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
-    console.error('Cache update failed:', error);
+    console.error('[Webhook] Cache update failed:', error);
     return res.status(500).json({ 
       error: 'Cache update failed',
       message: error.message 
@@ -42,7 +55,6 @@ export default async function handler(req, res) {
   }
 }
 
-// Vercel Cron 配置
 export const config = {
   maxDuration: 30
 };
