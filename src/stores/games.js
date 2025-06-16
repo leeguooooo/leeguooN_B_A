@@ -167,6 +167,16 @@ export const useGamesStore = defineStore('games', () => {
             return puppeteerResponse.data
           } catch (puppeteerError) {
             console.error('Puppeteer 版本也失败:', puppeteerError)
+            // 如果 Puppeteer 也失败，尝试增强版
+            try {
+              console.log('尝试使用增强版本...')
+              const enhancedResponse = await axios.get('/api/parseLiveLinks-enhanced', {
+                params: { url, source: source || '' }
+              })
+              return enhancedResponse.data
+            } catch (enhancedError) {
+              console.error('增强版本也失败:', enhancedError)
+            }
           }
         }
         

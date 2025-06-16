@@ -1,46 +1,29 @@
 // 使用 Puppeteer 解析直播链接 API
-const puppeteer = require('puppeteer');
-
-// 仅在 Vercel 环境中使用 @sparticuz/chromium
-let chromium;
-if (process.env.VERCEL) {
-  chromium = require('@sparticuz/chromium');
-}
+const puppeteerCore = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
 async function fetchHtmlWithPuppeteer(url, source) {
   let browser;
   
   try {
+    console.log('[Puppeteer] Starting browser...');
+    
+    // Vercel 环境配置
     const options = {
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-features=IsolateOrigins,site-per-process',
-        '--window-size=1920,1080'
-      ],
-      headless: 'new',
-      defaultViewport: {
-        width: 1920,
-        height: 1080
-      },
-      timeout: 30000
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true
     };
 
-    // Vercel 环境需要特殊配置
-    if (process.env.VERCEL && chromium) {
-      options.args = [...chromium.args, ...options.args];
-      options.executablePath = await chromium.executablePath();
-      options.headless = chromium.headless;
-    }
-
-    browser = await puppeteer.launch(options);
+    browser = await puppeteerCore.launch(options);
+    console.log('[Puppeteer] Browser launched');
+    
     const page = await browser.newPage();
-
+    
     // 设置 User-Agent
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    await page.setUserAgent('Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Mobile/15E148 Safari/604.1');
     
     // 设置额外的请求头
     await page.setExtraHTTPHeaders({
@@ -108,7 +91,7 @@ module.exports = async function handler(req, res) {
     const html = await fetchHtmlWithPuppeteer(url, source);
     
     // 使用正则表达式解析（避免依赖 cheerio）
-    const linkRegex = /<a[^>]+class=['"]item['"][^>]+data-play=['"]([^'"]+)['"][^>]*>([^<]+)<\/a>/g;
+    const linkRegex = /<a[^>]+class=['\"]item['\"][^>]+data-play=['\"]([^'\"]+)['\"][^>]*>([^<]+)<\/a>/g;
     const liveLinks = [];
     let match;
     
@@ -157,7 +140,7 @@ module.exports = async function handler(req, res) {
     
     return res.status(200).json(errorResponse);
   }
-}
+};
 
 module.exports.config = {
   maxDuration: 30
